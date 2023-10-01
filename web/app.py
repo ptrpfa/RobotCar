@@ -16,12 +16,13 @@ def index():
 
 @app.route("/publish", methods=['GET', 'POST'])
 def publish():
-    client.publish('test_topic',payload="test", qos=1)
+    client.publish('pico_w/recv',payload="hello from web", qos=1)
     return render_template("index.html")
 
 
 def on_message(client, userdata, msg):
-     print((msg.payload))
+    print((msg.payload))
+    
 
 if __name__ == "__main__":
     client = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv31)
@@ -30,7 +31,7 @@ if __name__ == "__main__":
     client.username_pw_set(CLIENT_USERNAME, CLIENT_PW)
     client.connect(HOST, 8883)
     
-    client.subscribe("test_topic", qos=1)
+    client.subscribe("pico_w/send", qos=1)
     
     # client.on_publish = on_publish
     client.on_message = on_message

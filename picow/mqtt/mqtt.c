@@ -11,16 +11,21 @@
 #include "lwip/tcp.h"
 #include "lwip/dns.h"
 
+#include "lwip/altcp_tcp.h"
+#include "lwip/altcp_tls.h"
 #include "lwip/apps/mqtt.h"
 
 #include "lwip/apps/mqtt_priv.h"
+#include "crypto_consts.h"
+
+#define MQTT_TLS 1
+
 
 // #include "tusb.h"
 
 #define DEBUG_printf printf
-#define MQTT_SERVER_HOST "191331b7729648beb5d359a7925e03c4.s1.eu.hivemq.cloud"
-#define MQTT_SERVER_PORT 8883
 
+const char *cert = CRYPTO_CERT;
 
 typedef struct MQTT_CLIENT_T_ {
     ip_addr_t remote_addr;
@@ -129,7 +134,7 @@ err_t mqtt_test_publish(MQTT_CLIENT_T *state)
   u8_t qos = 0; /* 0 1 or 2, see MQTT specification.  AWS IoT does not support QoS 2 */
   u8_t retain = 0;
   cyw43_arch_lwip_begin();
-  err = mqtt_publish(state->mqtt_client, "pico_w/test", buffer, strlen(buffer), qos, retain, mqtt_pub_request_cb, state);
+  err = mqtt_publish(state->mqtt_client, "pico_w/send", buffer, strlen(buffer), qos, retain, mqtt_pub_request_cb, state);
   cyw43_arch_lwip_end();
   if(err != ERR_OK) {
     DEBUG_printf("Publish err: %d\n", err);
@@ -144,14 +149,27 @@ err_t mqtt_test_connect(MQTT_CLIENT_T *state) {
 
     memset(&ci, 0, sizeof(ci));
 
-    ci.client_id = "";
-    ci.client_user = "picow";
-    ci.client_pass = "INF2004_team18";
+    ci.client_id = "PicoW";
+    ci.client_user = CLIENT_USER;
+    ci.client_pass = CLIENT_PASS;
     ci.keep_alive = 60;
     ci.will_topic = NULL;
     ci.will_msg = NULL;
     ci.will_retain = 0;
     ci.will_qos = 1;
+
+    struct altcp_tls_config *tls_config;
+
+    DEBUG_printf("Setting up TLS with cert.\n");
+    ci.server_name = MQTT_SERVER_HOST;
+    tls_config = altcp_tls_create_config_client((const u8_t *) cert, 1 + strlen((const char *) cert));
+
+    if (tls_config == NULL) {
+        DEBUG_printf("Failed to initialize config\n");
+        return -1;
+    }
+
+    ci.tls_config = tls_config;
 
     const struct mqtt_connect_client_info_t *client_info = &ci;
 
@@ -223,7 +241,6 @@ int main() {
     }
 
     DEBUG_printf("Connected.\n");
-    
 
     MQTT_CLIENT_T *state = mqtt_client_init();
      
