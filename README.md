@@ -1,7 +1,7 @@
-### INF2004 Embedded Systems Team 18: Robot Car
+## INF2004 Embedded Systems Team 18: Robot Car
 
 ---
-#### Setup
+### Setup
 HiveMQ require that SNI be enabled on the client. This code uses a patched version of `mqtt.c` to support SNI. 
 
 To do so, in your expansion of `pico-sdk`, run
@@ -14,7 +14,7 @@ git apply path/to/picow/mqtt-sni.patch
 Install the MQTT CLI **[Here](https://hivemq.github.io/mqtt-cli/docs/installation/)**.
 
 ---
-#### Starting the Flask webserver
+### Starting the Flask webserver
 
 1. Change your current directory to the `web/` folder:
     ```
@@ -40,7 +40,7 @@ Install the MQTT CLI **[Here](https://hivemq.github.io/mqtt-cli/docs/installatio
 	``` 
 6. (Temp) Navigate to http://127.0.0.1:5000, the `publish` link will publish a message to the topic `pico_w/recv`  
 
-#### Building Pico W (temp)
+### Building Pico W (temp)
 
 1. Configure `WIFI_SSID` and `WIFI_PASSWORD` cmake environment variables
 2. Open up the `picow` folder in Pico VS Code and build the `mqtt` target in cmake
