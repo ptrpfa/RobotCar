@@ -3,3 +3,4 @@
 /picow/.vscode/
 /picow/build/
 /web/.venv/
+/web/__pycache__/
