@@ -112,6 +112,7 @@ static void mqtt_pub_data_cb(void *arg, const u8_t *data, u16_t len, u8_t flags)
         {
             buffer[data_len] = 0;
             DEBUG_printf("Message received: %s\n", &buffer);
+    
         }
     }
 }

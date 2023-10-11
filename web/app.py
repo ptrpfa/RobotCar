@@ -19,6 +19,18 @@ def publish():
     client.publish('pico_w/recv',payload="hello from web", qos=1)
     return render_template("index.html")
 
+@app.route("/send_control", methods=['POST'])
+def send_control():
+    data = request.get_json()
+    direction = data.get('direction')
+
+    # Publish the control data to the Pico
+    client.publish('pico_w/recv', payload=direction, qos=1)
+
+    return jsonify({"message": "Control data sent successfully"})
+
+
+
 
 def on_message(client, userdata, msg):
     print((msg.payload))
