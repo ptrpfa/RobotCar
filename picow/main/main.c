@@ -93,7 +93,7 @@ int main()
         if (is_nil_time(timeout) || absolute_time_diff_us(now, timeout) <= 0)
         {
             temperature = read_onboard_temperature();
-            sprintf(message, "{\"temperature\":\"%.2fC\"}", temperature);
+            sprintf(message, "%.2f", temperature);
             mqtt_publish_message(state, message, "pico_w/temperature", mqtt_pub_request_cb);
             timeout = make_timeout_time_ms(1000);
         }

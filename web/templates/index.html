@@ -55,10 +55,10 @@
                     <div class="col-lg-4 col-md-6 col-xs-12">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">Fly</h3>
+                                <h3 class="panel-title">Temperature</h3>
                             </div>
                             <div class="panel-body">
-                                <div id="donutChart" class="rad-chart"></div>
+                                <div id="temperature">No message yet.</div>
                             </div>
                         </div>
                     </div>
@@ -116,6 +116,29 @@
     
         document.querySelector('.left.control').addEventListener('click', () => {
             sendControlData('Move left');
+        });
+
+        function fetchTemperature() {
+            $.ajax({
+                url: '/get_temperature',
+                type: 'GET',
+                success: function(response) {
+                    $('#temperature').text("Temperature: " + response.latest_temperature + "°C");
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching temperature:', error);
+                    $('#temperature').text('Failed to fetch temperature');
+                },
+                complete: function() {
+                    // Schedule the next request when the current one's complete
+                    setTimeout(fetchTemperature, 500);  // Adjust the polling interval as needed
+                    
+                }
+            });
+        }
+        
+        $(document).ready(function() {
+            fetchTemperature();  // Start the initial fetch
         });
     </script>
 </body>

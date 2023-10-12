@@ -6,6 +6,7 @@ import json
 CLIENT_USERNAME = "web-client"
 CLIENT_PW = "INF2004_team18"
 HOST = "191331b7729648beb5d359a7925e03c4.s1.eu.hivemq.cloud"
+latest_temperature = ""
 
 app = Flask(__name__, static_folder='./static',
             template_folder="./templates")
@@ -26,15 +27,18 @@ def send_control():
 
     # Publish the control data to the Pico
     client.publish('pico_w/recv', payload=direction, qos=1)
-
     return jsonify({"message": "Control data sent successfully"})
 
+def on_message(client, userdata, message):
+    global latest_temperature
+    if message.topic == "pico_w/temperature":
+        latest_temperature = message.payload.decode()
+   
 
+@app.route("/get_temperature", methods=['GET'])
+def get_temperature():
+    return jsonify(latest_temperature=latest_temperature)
 
-
-def on_message(client, userdata, msg):
-    print((msg.payload))
-    
 
 if __name__ == "__main__":
     client = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv31)
@@ -44,8 +48,10 @@ if __name__ == "__main__":
     client.connect(HOST, 8883)
     
     client.subscribe("pico_w/send", qos=1)
+    client.subscribe("pico_w/temperature",qos=1)
     
     # client.on_publish = on_publish
     client.on_message = on_message
     client.loop_start()
     app.run(debug=True)
+

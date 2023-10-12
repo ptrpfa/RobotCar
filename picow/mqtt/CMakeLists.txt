@@ -3,8 +3,8 @@ add_executable(mqtt
         )
 
 target_compile_definitions(mqtt PRIVATE
-        WIFI_SSID="Main Living Room"
-        WIFI_PASSWORD="m72eetxn"
+        WIFI_SSID=\"${WIFI_SSID}\"
+        WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
 )
 
 target_include_directories(mqtt PRIVATE
