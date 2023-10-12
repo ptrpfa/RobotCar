@@ -37,6 +37,7 @@ target_compile_definitions(mqtt_lib PRIVATE
         WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
 )
 
+
 target_include_directories(mqtt_lib PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
         ${CMAKE_CURRENT_LIST_DIR}/..
