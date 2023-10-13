@@ -1,145 +1,155 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='style.css') }}">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static',filename='style.css') }}"
+    />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+      integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script
+      src="https://cdn.socket.io/4.6.0/socket.io.min.js"
+      integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+"
+      crossorigin="anonymous"
+    ></script>
     <title>Robocop</title>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <nav class="rad-navigation">
-            <div class="rad-logo-container">
-                <a href="#" class="rad-logo">Robot Car</a>
-                <a href="#" class="rad-toggle-btn pull-right"><i class="fa fa-bars"></i></a>
-            </div>
-        </nav>
+      <nav class="rad-navigation">
+        <div class="rad-logo-container">
+          <a href="#" class="rad-logo">Robot Car</a>
+          <a href="#" class="rad-toggle-btn pull-right"
+            ><i class="fa fa-bars"></i
+          ></a>
+        </div>
+      </nav>
     </header>
     <main>
-        <div class="rad-body-wrapper">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-lg-4 col-md-12 col-xs-12">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Controls</h3>
-                            </div>
-                            <div class="panel-body">
-                                <!-- Car Controls -->
-                                <div class="controls">
-                                  <a href="/publish">Publish</a>
-                                    <div class="set blue">
-                                        <nav class="d-pad">
-                                            <a class="up control" data-direction="up"></a>
-                                            <a class="right control" data-direction="right"></a>
-                                            <a class="down control" data-direction="down"></a>
-                                            <a class="left control" data-direction="left"></a>
-                                        </nav>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-xs-12">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Speed</h3>
-                            </div>
-                            <div class="panel-body">
-                                <div id="lineChart" class="rad-chart"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-xs-12">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Temperature</h3>
-                            </div>
-                            <div class="panel-body">
-                                <div id="temperature">No message yet.</div>
-                            </div>
-                        </div>
-                    </div>
+      <div class="rad-body-wrapper">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-lg-4 col-md-12 col-xs-12">
+              <div class="panel panel-default">
+                <div class="panel-heading">
+                  <h3 class="panel-title">Controls</h3>
                 </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Mapping</h3>
-                            </div>
-                            <div class="panel-body">
-                                <div id="barChart" class="rad-chart"></div>
-                            </div>
-                        </div>
+                <div class="panel-body">
+                  <!-- Car Controls -->
+                  <div class="controls">
+                    <a href="/publish">Publish</a>
+                    <div class="set blue">
+                      <nav class="d-pad">
+                        <a class="up control" data-direction="up"></a>
+                        <a class="right control" data-direction="right"></a>
+                        <a class="down control" data-direction="down"></a>
+                        <a class="left control" data-direction="left"></a>
+                      </nav>
                     </div>
+                  </div>
                 </div>
+              </div>
             </div>
+            <div class="col-lg-4 col-md-6 col-xs-12">
+              <div class="panel panel-default">
+                <div class="panel-heading">
+                  <h3 class="panel-title">Speed</h3>
+                </div>
+                <div class="panel-body">
+                  <div id="lineChart" class="rad-chart"></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-4 col-md-6 col-xs-12">
+              <div class="panel panel-default">
+                <div class="panel-heading">
+                  <h3 class="panel-title">Temperature</h3>
+                </div>
+                <div class="panel-body">
+                  <div id="temperature">No message yet.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="panel panel-default">
+                <div class="panel-heading">
+                  <h3 class="panel-title">Mapping</h3>
+                </div>
+                <div class="panel-body">
+                  <div id="barChart" class="rad-chart"></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </main>
     <script>
-        // Function to send control data to the server
-        function sendControlData(direction) {
-            // Send an HTTP POST request to your Flask server
-            fetch('/send_control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ direction: direction }),
-            })
-            .then(response => {
-                if (response.ok) {
-                    console.log('Control data sent successfully');
-                } else {
-                    console.error('Failed to send control data');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        }
-    
-        // Add click event listeners to your control buttons
-        document.querySelector('.up.control').addEventListener('click', () => {
-            sendControlData('Move up');
-        });
-        
-        document.querySelector('.right.control').addEventListener('click', () => {
-            sendControlData('Move right');
-        });
-    
-        document.querySelector('.down.control').addEventListener('click', () => {
-            sendControlData('Move down');
-        });
-    
-        document.querySelector('.left.control').addEventListener('click', () => {
-            sendControlData('Move left');
-        });
+      // Function to send control data to the server
+      function sendControlData(direction) {
+        // Send an HTTP POST request to your Flask server
+        fetch("/send_control", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ direction: direction }),
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Control data sent successfully");
+            } else {
+              console.error("Failed to send control data");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
 
-        function fetchTemperature() {
-            $.ajax({
-                url: '/get_temperature',
-                type: 'GET',
-                success: function(response) {
-                    $('#temperature').text("Temperature: " + response.latest_temperature + "°C");
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error fetching temperature:', error);
-                    $('#temperature').text('Failed to fetch temperature');
-                },
-                complete: function() {
-                    // Schedule the next request when the current one's complete
-                    setTimeout(fetchTemperature, 500);  // Adjust the polling interval as needed
-                    
-                }
-            });
-        }
-        
-        $(document).ready(function() {
-            fetchTemperature();  // Start the initial fetch
+      // Add click event listeners to your control buttons
+      document.querySelector(".up.control").addEventListener("click", () => {
+        sendControlData("Move up");
+      });
+
+      document.querySelector(".right.control").addEventListener("click", () => {
+        sendControlData("Move right");
+      });
+
+      document.querySelector(".down.control").addEventListener("click", () => {
+        sendControlData("Move down");
+      });
+
+      document.querySelector(".left.control").addEventListener("click", () => {
+        sendControlData("Move left");
+      });
+
+      $(document).ready(function () {
+        // Establish a connection to the server
+        var socket = io.connect(
+          "http://" + document.domain + ":" + location.port
+        );
+
+        // Listen for the 'mqtt_message' event and update the DOM with jQuery
+        socket.on("mqtt_temperature", function (msg) {
+          $("#temperature").text("Temperature: " + msg.data + "°C");
         });
+      });
     </script>
-</body>
+  </body>
 </html>
