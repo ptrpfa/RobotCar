@@ -31,10 +31,9 @@
     <header>
       <nav class="rad-navigation">
         <div class="rad-logo-container">
-          <a href="#" class="rad-logo">Robot Car</a>
-          <a href="#" class="rad-toggle-btn pull-right"
-            ><i class="fa fa-bars"></i
-          ></a>
+          <div class="rad-logo mb-3">Robot Car</div>
+
+          <i class="fa fa-bars"></i>
         </div>
       </nav>
     </header>
@@ -50,7 +49,6 @@
                 <div class="panel-body">
                   <!-- Car Controls -->
                   <div class="controls">
-                    <a href="/publish">Publish</a>
                     <div class="set blue">
                       <nav class="d-pad">
                         <a class="up control" data-direction="up"></a>
@@ -73,13 +71,21 @@
                 </div>
               </div>
             </div>
-            <div class="col-lg-4 col-md-6 col-xs-12">
-              <div class="panel panel-default">
+            <div class="col-lg-4 col-md-6 col-xs-12 d-flex flex-column">
+              <div class="panel panel-default mb-3">
                 <div class="panel-heading">
                   <h3 class="panel-title">Temperature</h3>
                 </div>
                 <div class="panel-body">
                   <div id="temperature">No message yet.</div>
+                </div>
+              </div>
+              <div class="panel panel-default">
+                <div class="panel-heading">
+                  <h3 class="panel-title">Ultrasonic</h3>
+                </div>
+                <div class="panel-body">
+                  <div id="ultrasonic">No message yet.</div>
                 </div>
               </div>
             </div>
@@ -122,23 +128,6 @@
           });
       }
 
-      // Add click event listeners to your control buttons
-      document.querySelector(".up.control").addEventListener("click", () => {
-        sendControlData("Move up");
-      });
-
-      document.querySelector(".right.control").addEventListener("click", () => {
-        sendControlData("Move right");
-      });
-
-      document.querySelector(".down.control").addEventListener("click", () => {
-        sendControlData("Move down");
-      });
-
-      document.querySelector(".left.control").addEventListener("click", () => {
-        sendControlData("Move left");
-      });
-
       $(document).ready(function () {
         // Establish a connection to the server
         var socket = io.connect(
@@ -148,6 +137,27 @@
         // Listen for the 'mqtt_message' event and update the DOM with jQuery
         socket.on("mqtt_temperature", function (msg) {
           $("#temperature").text("Temperature: " + msg.data + "°C");
+        });
+
+        socket.on("mqtt_ultrasonic", function (msg) {
+          $("#ultrasonic").text("Distance: " + msg.data + "cm");
+        });
+
+        // Add click event listeners to control buttons
+        $(".up.control").click(function () {
+          sendControlData("Up");
+        });
+
+        $(".right.control").click(function () {
+          sendControlData("Right");
+        });
+
+        $(".down.control").click(function () {
+          sendControlData("Down");
+        });
+
+        $(".left.control").click(function () {
+          sendControlData("Left");
         });
       });
     </script>

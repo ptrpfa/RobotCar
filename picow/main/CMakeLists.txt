@@ -6,14 +6,13 @@ target_include_directories(main PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
         ${CMAKE_CURRENT_LIST_DIR}/..
         ${CMAKE_CURRENT_LIST_DIR}/../mqtt
-)
+        ${CMAKE_CURRENT_LIST_DIR}/../ultrasonic)
 
 # pull in common dependencies
 target_link_libraries(main 
         hardware_adc
-        pico_stdlib              # for core functionality
         mqtt_lib
-)
+        ultrasonic_lib)
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(main)

@@ -3,6 +3,7 @@
 #include "pico/stdlib.h"
 #include "hardware/adc.h"
 #include "mqtt.h"
+#include "ultrasonic.h"
 
 u32_t data_in = 0;
 
@@ -69,32 +70,59 @@ float read_onboard_temperature()
 
 int main()
 {
+    stdio_init_all();
+    // Sensor values
     float temperature = 0.0;
-    char message[128];
+    uint64_t cm = 0.0;
+
+    // Mqtt message
+    char temp_message[128];
+    char ultrasonic_message[128];
+
+    // Init mqtt state
+    MQTT_CLIENT_T *state = mqtt_setup(mqtt_pub_start_cb, mqtt_pub_data_cb);
+    bool subscribed = false;
+
+    // Init timeout for mqtt publish
+    absolute_time_t timeout = nil_time;
+
+    // Init pins
     adc_init();
     adc_set_temp_sensor_enabled(true);
     adc_select_input(4);
 
-    stdio_init_all();
+    setupUltrasonicPins();
+
     // Run functions here
-
-    MQTT_CLIENT_T *state = mqtt_setup(mqtt_pub_start_cb, mqtt_pub_data_cb);
-
-    // Subscribe to topic
-    mqtt_subscribe_topic(state, "pico_w/recv", mqtt_sub_request_cb);
-
-    absolute_time_t timeout = nil_time;
 
     // Temporary while loop to publish every one second
     while (true)
     {
+        cyw43_arch_poll();
         // Publish message
         absolute_time_t now = get_absolute_time();
-        if (is_nil_time(timeout) || absolute_time_diff_us(now, timeout) <= 0)
+        if ((is_nil_time(timeout) || absolute_time_diff_us(now, timeout) <= 0) && mqtt_is_connected(state))
         {
+            // Subscribe to topic
+            if (!subscribed)
+            {
+                if (mqtt_subscribe_topic(state, "pico_w/direction", mqtt_sub_request_cb) == 0)
+                {
+                    subscribed = true;
+                };
+            }
+
+            // Get temperature value and publish
             temperature = read_onboard_temperature();
-            sprintf(message, "%.2f", temperature);
-            mqtt_publish_message(state, message, "pico_w/temperature", mqtt_pub_request_cb);
+            sprintf(temp_message, "%.2f", temperature);
+            mqtt_publish_message(state, temp_message, "pico_w/temperature", mqtt_pub_request_cb);
+
+            // Get ultrasonic value and publish
+            cm = getCm();
+            sprintf(ultrasonic_message, "%llu", cm);
+            mqtt_publish_message(state, ultrasonic_message, "pico_w/ultrasonic", mqtt_pub_request_cb);
+
+            // Set timeouut value
             timeout = make_timeout_time_ms(1000);
         }
     }

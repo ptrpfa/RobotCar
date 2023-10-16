@@ -96,35 +96,28 @@ err_t mqtt_publish_message(MQTT_CLIENT_T *state, const char *message, const char
     err_t err;
     u8_t qos = 0; /* 0 1 or 2, see MQTT specification.  AWS IoT does not support QoS 2 */
     u8_t retain = 0;
-    cyw43_arch_poll();
 
-    if (mqtt_client_is_connected(state->mqtt_client))
+    cyw43_arch_lwip_begin();
+    err = mqtt_publish(state->mqtt_client, topic, message, strlen(message), qos, retain, cb, state);
+    cyw43_arch_lwip_end();
+    if (err != ERR_OK)
     {
-        cyw43_arch_lwip_begin();
-        err = mqtt_publish(state->mqtt_client, topic, message, strlen(message), qos, retain, cb, state);
-        cyw43_arch_lwip_end();
-        if (err != ERR_OK)
-        {
-            DEBUG_printf("Publish err: %d\n", err);
-        }
-
-        return err;
+        DEBUG_printf("Publish err: %d\n", err);
     }
-    return -1;
+
+    return err;
 }
 
 err_t mqtt_subscribe_topic(MQTT_CLIENT_T *state, const char *topic, mqtt_request_cb_t cb)
 {
     err_t err;
-    cyw43_arch_poll();
-    if (mqtt_client_is_connected(state->mqtt_client))
-    {
-        cyw43_arch_lwip_begin();
-        err = mqtt_sub_unsub(state->mqtt_client, topic, 0, cb, 0, 1);
-        cyw43_arch_lwip_end();
-        return err;
-    }
-    return -1;
+
+    err = mqtt_sub_unsub(state->mqtt_client, topic, 0, cb, 0, 1);
+    return err;
+}
+u8_t mqtt_is_connected(MQTT_CLIENT_T *state)
+{
+    return mqtt_client_is_connected(state->mqtt_client);
 }
 
 err_t mqtt_connect_to_broker(MQTT_CLIENT_T *state, mqtt_incoming_publish_cb_t pub_cb, mqtt_incoming_data_cb_t data_cb)

@@ -26,6 +26,7 @@ void run_dns_lookup(MQTT_CLIENT_T *state);
 void dns_found(const char *name, const ip_addr_t *ipaddr, void *callback_arg);
 err_t mqtt_publish_message(MQTT_CLIENT_T *state, const char *message, const char *topic, mqtt_request_cb_t cb);
 err_t mqtt_subscribe_topic(MQTT_CLIENT_T *state, const char *topic, mqtt_request_cb_t cb);
+u8_t mqtt_is_connected(MQTT_CLIENT_T *state);
 err_t mqtt_connect_to_broker(MQTT_CLIENT_T *state, mqtt_incoming_publish_cb_t pub_cb, mqtt_incoming_data_cb_t data_cb);
 MQTT_CLIENT_T *mqtt_setup(mqtt_incoming_publish_cb_t pub_cb, mqtt_incoming_data_cb_t data_cb);
 
