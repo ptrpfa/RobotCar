@@ -1,6 +1,6 @@
 **/.DS_Store
-.vscode/
-/picow/.vscode/
+**/.vscode/
+**/.venv
+**/__pycache__
 /picow/build/
-/web/.venv/
-/web/__pycache__/
+/Reference/
