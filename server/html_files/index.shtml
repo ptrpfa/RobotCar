@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Max Verstappen</title>
+    <style>
+        .container {
+            display: flex;
+        }
+        .left-column {
+            flex: 2; /* Adjust the width of the left column as needed */
+            padding: 10px;
+        }
+        .map {
+            flex: 1; /* The map occupies 1/3 of the container width */
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .button {
+            display: block;
+            padding: 10px;
+            text-align: center;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 10px; /* Add margin to create a gap between buttons */
+        }
+        .data {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome To Red Bull Racing</h1>
+    <div class="container">
+        <div class="left-column">
+            <div class="controls">
+                <h2>Engine Controls:</h2>
+                <a href="/led.cgi?led=1" class="button">Start Car</a>
+                <a href="/led.cgi?led=0" class="button">Stop Car</a>
+                <a href="/index.shtml" class="button">Refresh</a>
+            </div>
+            <div class="data">
+                <h2>SSI Data:</h2>
+                <p>Car Voltage: <!--#volt--></p>
+                <p>Car Engine Temperature: <!--#temp--> C</p>
+                <p>Car is switched: <!--#led--></p>
+            </div>
+        </div>
+        <div class="map">
+            <!-- Add your map image here -->
+            <img src="/assets/route.png" alt="Route Map" style="width: 100%; max-width: 100%; height: auto;">
+        </div>
+    </div>
+</body>
+</html>

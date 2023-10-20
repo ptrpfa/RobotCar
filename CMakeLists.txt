@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.12)
 
 # Pull in SDK (must be before project)
 include(pico_sdk_import.cmake)
+include(pico_extras_import_optional.cmake)
+
 
 project(INF2004_TEAM18 C CXX ASM)
 set(CMAKE_C_STANDARD 11)
@@ -21,4 +23,7 @@ if (NOT PICO_NO_HARDWARE)
     add_subdirectory(main)
     add_subdirectory(ultrasonic)
     add_subdirectory(barcode)
+    
 endif ()
+
+add_subdirectory(server)
