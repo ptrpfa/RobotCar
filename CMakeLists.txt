@@ -23,7 +23,7 @@ if (NOT PICO_NO_HARDWARE)
     add_subdirectory(main)
     add_subdirectory(ultrasonic)
     add_subdirectory(barcode)
-    
+    add_subdirectory(motor)
 endif ()
 
 add_subdirectory(server)
