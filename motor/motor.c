@@ -1,15 +1,10 @@
+// Control L and R motor speed
+
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "hardware/pwm.h"
-
-// Define motor pins
-#define IN1 6  // GPIO pin for L motor input 1
-#define IN2 7  // GPIO pin for L motor input 2
-#define ENA 8  // GPIO pin for L motor enable
-#define IN3 4  // GPIO pin for R motor input 1
-#define IN4 3  // GPIO pin for R motor input 2
-#define ENB 2  // GPIO pin for R motor enable
+#include "motor.h"
 
 // Initialize pins for motor
 void initMotorSetup() {
@@ -50,15 +45,15 @@ void initMotorPWM() {
 	uint sliceRight = pwm_gpio_to_slice_num(ENB);
 	uint channelRight = pwm_gpio_to_channel(ENB);
 
-    // Set PWM frequency to 40kHz (125MHz / 3125).
+    // Set PWM frequency to 40kHz (125MHz / 3125)
 	pwm_set_wrap(sliceLeft, 3125);              
 	pwm_set_wrap(sliceRight, 3125);
 
-    // Set the clock divider to 125
+    // Set clock divider to 125
 	pwm_set_clkdiv(sliceLeft, 125);
 	pwm_set_clkdiv(sliceRight, 125);
 
-    // Enable the PWM for both motor channels
+    // Enable PWM for both motor channels
 	pwm_set_enabled(sliceLeft, true);	        
 	pwm_set_enabled(sliceRight, true);          
 }
@@ -93,7 +88,8 @@ void stopMotor() {
     gpio_put(ENB, 0);
 }
 
-// Function to turn. 0 - left, 1 - right 
+// Function to turn
+// 0 - left, 1 - right 
 void turnMotor(int direction) {
     // Motor to turn left 
     if (direction == 0) {
@@ -128,6 +124,7 @@ void turnMotor(int direction) {
     stopMotor();
 }
 
+/* 
 int main() {
     stdio_init_all();
 
@@ -154,3 +151,4 @@ int main() {
 
     return 0;
 }
+*/

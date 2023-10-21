@@ -18,7 +18,7 @@ typedef struct kalman_state_
     double k; // kalman gain
 } kalman_state;
 
-static kalman_state *kalman_init(double q, double r, double p, double initial_value)
+kalman_state *kalman_init(double q, double r, double p, double initial_value)
 {
     kalman_state *state = calloc(1, sizeof(kalman_state));
     state->q = q;
@@ -80,20 +80,20 @@ double getCm(kalman_state *state)
     return state->x;
 }
 
-int main()
-{
-    // Driver code to run ultrasonic sensor
-    double cm;
-    stdio_init_all();
-    setupUltrasonicPins();
-    kalman_state *state = kalman_init(0.125, 32, 1023, 0);
-    while (true)
-    {
-        for (int i = 0; i < 10; i++)
-        {
-            cm = getCm(state);
-        }
-        printf("Distance: %.2lf\n", cm);
-        sleep_ms(500);
-    }
-}
+// int main()
+// {
+//     // Driver code to run ultrasonic sensor
+//     double cm;
+//     stdio_init_all();
+//     setupUltrasonicPins();
+//     kalman_state *state = kalman_init(0.125, 32, 1023, 0);
+//     while (true)
+//     {
+//         for (int i = 0; i < 10; i++)
+//         {
+//             cm = getCm(state);
+//         }
+//         printf("Distance: %.2lf\n", cm);
+//         sleep_ms(500);
+//     }
+// }

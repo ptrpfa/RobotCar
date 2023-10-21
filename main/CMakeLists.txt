@@ -5,12 +5,14 @@ add_executable(main
 target_include_directories(main PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
         ${CMAKE_CURRENT_LIST_DIR}/..
-        ${CMAKE_CURRENT_LIST_DIR}/../ultrasonic)
+        ${CMAKE_CURRENT_LIST_DIR}/../ultrasonic
+        ${CMAKE_CURRENT_LIST_DIR}/../motor)
 
 # pull in common dependencies
 target_link_libraries(main 
         hardware_adc
-        ultrasonic_lib)
+        ultrasonic_lib
+        motor_lib)
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(main)
