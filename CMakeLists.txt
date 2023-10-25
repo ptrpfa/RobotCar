@@ -24,6 +24,7 @@ if (NOT PICO_NO_HARDWARE)
     add_subdirectory(ultrasonic)
     add_subdirectory(barcode)
     add_subdirectory(motor)
+    add_subdirectory(magnetometer)
 endif ()
 
 add_subdirectory(server)
