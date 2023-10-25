@@ -13,31 +13,6 @@
 
 void init_i2c_default();
 
-void lsm303dlh_acc_setup() {
-   uint8_t buffer[2] = {CTRL_REG_4, 0x00};
-   
-   i2c_write_blocking(
-      i2c_default,
-      INTERFACE_A,
-      buffer,
-      2,
-      true
-   );
-
-   buffer[0] = CTRL_REG_1;
-   buffer[1] = 0x27;
-   
-   i2c_write_blocking(
-      i2c_default,
-      INTERFACE_A,
-      buffer,
-      2,
-      false
-   );
-
-}
-
-
 void lsm303dlh_mag_setup() {
    uint8_t buffer[2] = {MAG_CRA, 0x10}; // 15 Hz refreshrate
    
@@ -72,39 +47,6 @@ void lsm303dlh_mag_setup() {
    );
 
 }
-
-
-void lsm303dlh_read_acc(accel_t *acc) {
-   uint8_t buffer[6];
-   int16_t accel[3];
-   uint8_t reg = ACC_REG;
-
-   i2c_write_blocking(
-      i2c_default,
-      INTERFACE_A,
-      &reg,
-      1,
-      true
-   );
-
-   i2c_read_blocking(
-      i2c_default,
-      INTERFACE_A,
-      buffer,
-      6,
-      false
-   );
-
-   // merge uint8_t to int16_t
-   for (int i = 0; i < 3; i++) {
-      accel[i] = ((buffer[i * 2] | buffer[(i * 2) + 1]  << 8));
-   }
-
-   acc->x = accel[0];
-   acc->y = accel[1];
-   acc->z = accel[2];
-}
-
 
 void lsm303dlh_read_mag(mag_t *mag) {
    uint8_t buffer[6];
@@ -169,7 +111,7 @@ int main() {
    stdio_init_all();
 
    // device setup (wakeup)
-   lsm303dlh_acc_setup();
+   //lsm303dlh_acc_setup();
    lsm303dlh_mag_setup();
 
    accel_t acc;
@@ -177,17 +119,72 @@ int main() {
 
    // read values
    while (true) {
-    lsm303dlh_read_acc(&acc);
-    lsm303dlh_read_mag(&mag);
-    int32_t angle = get_angle(&mag); 
-    printf("\nAcc. \nX = %5d, \nY = %5d, \nZ = %5d \nMag. \nX = %4d, \nY = %4d, \nZ = %4d \n",
-            acc.x,acc.y,acc.z,mag.x,mag.y,mag.z);
-    printf("Angle: %d degrees", angle);
-    sleep_ms(REFRESH_PERIOD);
+      //lsm303dlh_read_acc(&acc);
+      lsm303dlh_read_mag(&mag);
+      int32_t angle = get_angle(&mag); 
+      printf("\nMag. \nX = %4d, \nY = %4d, \nZ = %4d \n",
+            mag.x,mag.y,mag.z);
+      printf("Angle: %d degrees", angle);
+      sleep_ms(REFRESH_PERIOD);
    }
 
    #endif
    return 0;
 }
 
+
+// void lsm303dlh_acc_setup() {
+//    uint8_t buffer[2] = {CTRL_REG_4, 0x00};
+   
+//    i2c_write_blocking(
+//       i2c_default,
+//       INTERFACE_A,
+//       buffer,
+//       2,
+//       true
+//    );
+
+//    buffer[0] = CTRL_REG_1;
+//    buffer[1] = 0x27;
+   
+//    i2c_write_blocking(
+//       i2c_default,
+//       INTERFACE_A,
+//       buffer,
+//       2,
+//       false
+//    );
+
+// }
+
+// void lsm303dlh_read_acc(accel_t *acc) {
+//    uint8_t buffer[6];
+//    int16_t accel[3];
+//    uint8_t reg = ACC_REG;
+
+//    i2c_write_blocking(
+//       i2c_default,
+//       INTERFACE_A,
+//       &reg,
+//       1,
+//       true
+//    );
+
+//    i2c_read_blocking(
+//       i2c_default,
+//       INTERFACE_A,
+//       buffer,
+//       6,
+//       false
+//    );
+
+//    // merge uint8_t to int16_t
+//    for (int i = 0; i < 3; i++) {
+//       accel[i] = ((buffer[i * 2] | buffer[(i * 2) + 1]  << 8));
+//    }
+
+//    acc->x = accel[0];
+//    acc->y = accel[1];
+//    acc->z = accel[2];
+// }
 
