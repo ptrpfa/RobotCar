@@ -42,9 +42,15 @@
     <div class="container">
         <div class="left-column">
             <div class="controls">
+                <h2>Led Controls:</h2>
+                <a href="/led.cgi?led=1" class="button">ON LED</a>
+                <a href="/led.cgi?led=0" class="button">OFF LED</a>
+                <a href="/index.shtml" class="button">Refresh</a>
+            </div>
+            <div class="controls">
                 <h2>Engine Controls:</h2>
-                <a href="/led.cgi?led=1" class="button">Start Car</a>
-                <a href="/led.cgi?led=0" class="button">Stop Car</a>
+                <a href="/engine.cgi?engine=1" class="button">Start Car</a>
+                <a href="/engine.cgi?engine=0" class="button">Stop Car</a>
                 <a href="/index.shtml" class="button">Refresh</a>
             </div>
             <div class="data">

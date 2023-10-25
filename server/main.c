@@ -4,12 +4,11 @@
 #include "lwipopts.h"
 #include "ssi.h"
 #include "cgi.h"
+#include "motor.h"
 
-
-
-// WIFI Credentials - take care if pushing to github!
-const char WIFI_SSID[] = "Main Living Room";
-const char WIFI_PASSWORD[] = "m72eetxn";
+// WIFI Credentials
+const char WIFI_SSID[] = "JR";
+const char WIFI_PASSWORD[] = "hello123";
 
 int main() {
     stdio_init_all();
@@ -18,8 +17,17 @@ int main() {
 
     cyw43_arch_enable_sta_mode();
 
+    // Initialise motor GPIO pins
+    initMotorSetup();
+
+    // Initialise motor PWM
+    initMotorPWM();
+
+    // Initialise encoder GPIO pins
+    initEncoderSetup();
+
     // Connect to the WiFI network - loop until connected
-    while(cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000) != 0){
+    while(cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000) != 0){
         printf("Attempting to connect...\n");
     }
     // Print a success message once connected
