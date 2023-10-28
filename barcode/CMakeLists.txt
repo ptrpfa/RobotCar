@@ -5,7 +5,7 @@ set(target barcode_driver)
 add_executable(${target} barcode.c)
 
 # Link libraries (common dependencies)
-target_link_libraries(${target} pico_stdlib)
+target_link_libraries(${target} pico_stdlib hardware_adc)
 
 # Enable USB output
 pico_enable_stdio_usb(${target} 1)

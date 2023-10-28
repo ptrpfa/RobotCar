@@ -2,7 +2,6 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "hardware/adc.h"
-#include "barcode.h"
 
 // Macros
 #define IR_PIN 26 // Analogue
@@ -34,13 +33,7 @@ int main() {
 
     // Loop forever
     while(true) {
-        // read_analogue();
-        scanned_code = "001010010";
-        white_bar[0] = 3;
-        white_bar[1] = 1;
-        black_bar[0] = 3;
-        black_bar[1] = 2;
-        printf("%s: %s\n", "001010010", get_barcode_char());
+        read_analogue();
     };
     
 }
