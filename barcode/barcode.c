@@ -1,28 +1,21 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "hardware/adc.h"
 #include "barcode.h"
 
 /* Function Definitions */
-// Function to read samples from the ADC
-void __not_in_flash_func(adc_capture)(uint16_t *buf, size_t count) {
-    adc_fifo_setup(true, false, 0, false, false);
-    adc_run(true);
-    for (int i = 0; i < count; i = i + 1)
-        buf[i] = adc_fifo_get_blocking();
-    adc_run(false);
-    adc_fifo_drain();
-}
-
 // Function to setup barcode pin
 void setup_barcode_pin() {
     // Initialise ADC on Raspberry Pi Pico
     adc_init();
     // Initialise GPIO pin for ADC operations, disabling all digital functions for that pin
-    adc_gpio_init(BARCODE_PIN);
+    adc_gpio_init(IR_SENSOR_PIN);
     // Set ADC channel
-    switch(BARCODE_PIN) {
+    switch(IR_SENSOR_PIN) {
         case 26:
             adc_select_input(0);
             break;
@@ -40,59 +33,25 @@ void setup_barcode_pin() {
     }
 }
 
-// Function to read from ADC
-bool read_barcode(struct repeating_timer *t) {
+// Function to read samples from the ADC
+float __not_in_flash_func(get_adc_sample_average)() {
+    // Initialise variable to store average of ADC sampling readings
+    float sample_average = 0.0;
+
     // Capture ADC sample readings
-    adc_capture(sample_buffer, SAMPLING_SIZE);
-
-    // Store current sample average as the last sample average before initialising it
-    last_sample_avg = current_sample_avg;
-    current_sample_avg = 0.0;
-
-    // Loop through samples to calculate current average sample value
-    for(int i = 0; i < SAMPLING_SIZE; i++) {
-        current_sample_avg += sample_buffer[i];
+    adc_fifo_setup(true, false, 0, false, false);
+    adc_run(true);
+    for (int i = 0; i < SAMPLING_SIZE; i++) {
+        sample_average += adc_fifo_get_blocking();
     }
+    adc_run(false);
+    adc_fifo_drain();
 
-    // Calculate current sample average voltage
-    current_sample_avg = (current_sample_avg / SAMPLING_SIZE) * conversion_factor;
-    // printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
+    // Calculate sample average voltage
+    sample_average = (sample_average / SAMPLING_SIZE) * conversion_factor;
 
-    // Calculate difference in voltage between current and last sample
-    float voltage_difference = (current_sample_avg > last_sample_avg) ? (current_sample_avg - last_sample_avg) : (last_sample_avg - current_sample_avg);
-
-    // Check if there has been a change in voltage within the specified threshold
-    if((last_sample_avg != 0) && (voltage_difference / current_sample_avg) > STATE_DIFFERENCE) {
-        // Check if nothing has been scanned yet
-        if(current_color == -1) {
-            // Set current color to black
-            current_color = 1;
-            printf("Current color is black!");
-            printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
-        } 
-        else if(current_color == 0) {
-            // Set current color to black
-            current_color = 1;
-            printf("Current color is black!");
-            printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
-        }
-        else {
-            // Set current color to white
-            current_color = 0;
-            printf("Current color is white!");
-            printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
-        }
-    }
-
-    // scanned_code = "000101010";
-    // white_bar[0] = 1;
-    // white_bar[1] = 3;
-    // black_bar[0] = 5;
-    // black_bar[1] = 0;
-    // printf("%s: %s\n", "001010010", get_barcode_char());
-    
-
-    return true;
+    // Return sample average
+    return sample_average;
 }
 
 // Function to lookup barcode character
@@ -132,7 +91,7 @@ char* get_barcode_char() {
 
 
     // Ensure that the length of the barcode(9), number of black bars(5), number of white bars(4), and number of wide bars(3) is correct
-    if( (strlen(scanned_code) == CODE_LENGTH) && (black_bar[0] + black_bar[1] == 5) && (white_bar[0] + white_bar[1] == 4) && (white_bar[1] + black_bar[1] == 3)) {
+    if((strlen(scanned_code) == CODE_LENGTH) && (black_bar[0] + black_bar[1] == 5) && (white_bar[0] + white_bar[1] == 4) && (white_bar[1] + black_bar[1] == 3)) {
         // Loop through all possible binary and reverse binary representations for a matching lookup character
         for(int i = 0; i < TOTAL_CHAR; i++) {
             if((strcmp(scanned_code, array_code[i]) == 0) || (strcmp(scanned_code, array_reverse_code[i]) == 0)) {
@@ -145,6 +104,92 @@ char* get_barcode_char() {
 
     // Return lookup character obtained
     return lookup_char;
+}
+
+// Function to read from ADC
+bool read_barcode(struct repeating_timer *t) {
+    /* Read from IR sensor */
+    // Keep a copy of the last sampling average
+    last_sample_avg = current_sample_avg;
+
+    // Capture ADC sample readings
+    current_sample_avg = get_adc_sample_average();
+
+    // Get current time (from boot) and calculate hours, minutes, seconds, and milliseconds
+    uint64_t current_time = time_us_64();
+    uint64_t milliseconds = current_time / 1000 % 1000;
+    uint64_t seconds = (current_time / 1000000) % 60;
+    uint64_t minutes = (current_time / 60000000) % 60;
+    uint64_t hours = (current_time / 3600000000) % 24;
+
+    // Check current color scanned
+    current_color = (current_sample_avg >= BLACK_VOLTAGE) ? 1 : 0; // 0: White, 1: Black
+
+    /* Check for change in color/state */
+    // Calculate difference in voltage between current and last sample
+    float voltage_difference = (fabs(current_sample_avg - last_sample_avg) / current_sample_avg) * 100;
+    bool color_change = voltage_difference >= MIN_VOLTAGE_DIFF;
+
+    // Calculate difference between last state change time and current time
+    uint64_t time_diff = current_time - last_state_change_time;
+    bool valid_time_diff = time_diff >= MIN_TIME_DIFF;
+
+    // Compute boolean check
+    bool change_state = (current_color != last_scanned_color) && color_change && valid_time_diff;
+
+    printf("\n\n%02lld:%02lld:%02lld:%03lld => Color: %d", hours, minutes, seconds, milliseconds, last_scanned_color);
+    printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
+    printf("\nLast sampling average: %f V\n", last_sample_avg); 
+    printf("\nTIME DIFFERENCE: %02lld microseconds", time_diff);
+    printf("\nVOLTAGE DIFFERENCE: %f %%", voltage_difference);
+
+    
+    if(change_state) {
+        printf("\n~~~~~~COLOR CHANGE~~~~~~~~~\n");
+        // Update last state change time
+        last_state_change_time = current_time;
+        last_scanned_color = current_color;
+    }
+
+
+    // Check for state changes
+    // if(check_state_change()) {
+    //     // Check if nothing has been scanned yet
+    //     if(current_color == -1) {
+    //         // Set current color to black
+    //         current_color = 1;
+    //         printf("Current color is black!");
+    //         printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
+    //     } 
+    //     else if(current_color == 0) {
+    //         // Set current color to black
+    //         current_color = 1;
+    //         printf("Current color is black!");
+    //         printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
+    //     }
+    //     else {
+    //         // Set current color to white
+    //         current_color = 0;
+    //         printf("Current color is white!");
+    //         printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
+    //     }
+    //     // scanned_code = "000101010";
+    //     // white_bar[0] = 1;
+    //     // white_bar[1] = 3;
+    //     // black_bar[0] = 5;
+    //     // black_bar[1] = 0;
+    //     // printf("%s: %s\n", "001010010", get_barcode_char());
+    // }
+    // else {
+    //     printf("No state change!");
+
+    // }
+
+    
+    
+
+    return true;
+
 }
 
 // Program entrypoint
@@ -160,7 +205,7 @@ int main() {
     struct repeating_timer barcode_timer; 
 
     // Start periodic timer to periodically read for barcodes
-    add_repeating_timer_ms(BARCODE_PERIODIC_INTERVAL, read_barcode, NULL, &barcode_timer);
+    add_repeating_timer_ms(IR_SENSOR_PERIODIC_INTERVAL, read_barcode, NULL, &barcode_timer);
 
     // Loop forever
     while(true) {
