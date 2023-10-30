@@ -101,6 +101,7 @@ double getCm(kalman_state *state)
     return state->x;
 }
 
+
 int main()
 {
     // Driver code to run ultrasonic sensor
@@ -112,7 +113,7 @@ int main()
     sleep_ms(1000);
     while (true)
     {
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 20; i++)
         {
             cm = getCm(state);
         }

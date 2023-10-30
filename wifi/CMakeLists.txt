@@ -1,11 +1,11 @@
-set(PROGRAM_NAME Server)
+set(PROGRAM_NAME wifi)
 
 execute_process(COMMAND
     py makefsdata.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     )
 
-add_executable(${PROGRAM_NAME} server.c cgi.c ssi.c)
+add_executable(${PROGRAM_NAME} wifi.c cgi.c ssi.c)
 
 target_include_directories(${PROGRAM_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}

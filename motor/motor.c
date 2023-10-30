@@ -7,11 +7,7 @@
 #include "hardware/timer.h"
 #include "motor.h"
 
-volatile uint32_t pulseCount = 0;
-uint32_t finalTime = 0;
-uint32_t initialTime = 0;
-
-// Function to initialize pins for motor
+// Function to initialize pins for motors
 void initMotorSetup() {
     // Initialize GPIO pins for L motor control
     gpio_init(L_MOTOR_IN1);
@@ -38,7 +34,7 @@ void initMotorSetup() {
     gpio_put(R_MOTOR_ENB, 1);
 }
 
-// Function to initialize PWMs for motor
+// Function to initialize PWMs for motors
 void initMotorPWM() {
     // Set GPIO pins for ENA and ENB to PWM mode
 	gpio_set_function(L_MOTOR_ENA, GPIO_FUNC_PWM);
@@ -108,7 +104,7 @@ void turnMotor(int direction) {
         gpio_put(L_MOTOR_ENA, 1);
         gpio_put(R_MOTOR_ENB, 1);
 
-        sleep_ms(250);
+        sleep_ms(380);
     }   
     // Motor to turn right
     else {
@@ -122,78 +118,14 @@ void turnMotor(int direction) {
         gpio_put(L_MOTOR_ENA, 1);
         gpio_put(R_MOTOR_ENB, 1);
 
-        sleep_ms(250);
+        sleep_ms(380);
     }
 
     // Stop motor after turning
     stopMotor();
 }
 
-// Function to get motor speed
-void getSpeed() {
-    // Calculate the duration for 80 pulses in us
-    uint32_t duration = finalTime - initialTime;
-
-    // Calculate motor speed in cm/s (Speed = Distance / Time)
-    double distancePerHole = ENCODER_CIRCUMFERENCE / ENCODER_NOTCH;
-    double speed = (distancePerHole * 80) / ((double)duration / 1000000.0);
-
-    printf("Motor Speed: %.2lf cm/s\n", speed);
-
-    // Reset pulse count
-    pulseCount = 0;
-}
-
-// Function to count each encoder pulse
-void encoderPulse(uint gpio, uint32_t events) {
-    uint32_t timestamp = time_us_32();
-    pulseCount++;
-
-    // Store initial timestamp when first pulse is received
-    if (pulseCount == 1) {
-        initialTime = timestamp;
-    }
-    
-    // Update current time
-    finalTime = timestamp;
-
-    // After encoder disk spins 4 times, get speed
-    if (pulseCount >= 80) {
-        // Call getSpeed function when 80 pulses are counted
-        getSpeed();
-    }
-}
-
-// Function to initialize pins for motor
-void initEncoderSetup() {
-    // Initialize GPIO pins for L encoder
-    gpio_init(L_ENCODER_POW);
-    gpio_init(L_ENCODER_OUT);
-
-    // Set GPIO pins as outputs for L encoder
-    gpio_set_dir(L_ENCODER_POW, GPIO_OUT);
-    gpio_set_dir(L_ENCODER_OUT, GPIO_IN);
-
-    // Set GPIO settings for L encoder
-    gpio_pull_up(L_ENCODER_OUT);
-    gpio_set_irq_enabled_with_callback(L_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &encoderPulse);
-
-    // Initialize GPIO pins for R encoder
-    gpio_init(R_ENCODER_POW);
-    gpio_init(R_ENCODER_OUT);
-
-    // Set GPIO pins as outputs for R encoder
-    gpio_set_dir(R_ENCODER_POW, GPIO_OUT);
-    gpio_set_dir(R_ENCODER_OUT, GPIO_IN);
-
-    // Set GPIO settings for L encoder
-    gpio_pull_up(R_ENCODER_OUT);
-
-    // Enable the POW pins
-    gpio_put(L_ENCODER_POW, 1);
-    gpio_put(R_ENCODER_POW, 1);
-}
-
+/*
 int main() {
     stdio_init_all();
 
@@ -203,20 +135,28 @@ int main() {
     // Initialise motor PWM
     initMotorPWM();
 
-    // Initialise encoder GPIO pins
-    initEncoderSetup();
-
     while (1) {
-        // Run at half duty cycle
+        // Run at half duty cycle for 2 seconds
         moveMotor(1563);
+        sleep_ms(2000);
 
-        sleep_ms(3000);
+        // Turn right for 1 second
+        turnMotor(1)
+        sleep_ms(1000);
 
-        // Run at full duty cycle
+        // Run at full duty cycle for 2 seconds
         moveMotor(3125);
+        sleep_ms(2000);
 
-        sleep_ms(3000);
+        // Turn left for 1 second
+        turnMotor(0)
+        sleep_ms(1000);
+
+        // Stop for 5 seconds
+        stopMotor()
+        sleep_ms(5000);
     }
 
     return 0;
 }
+*/

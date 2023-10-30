@@ -13,8 +13,8 @@
 int startCar = 0;
 
 // WIFI Credentials
-const char WIFI_SSID[] = "";        // Insert own WIFI SSID
-const char WIFI_PASSWORD[] = "";    // Insert own WIFI password
+const char WIFI_SSID[] = "SINGTEL-WV58";
+const char WIFI_PASSWORD[] = "7tn83dwfae";
 
 int main() {
     stdio_init_all();

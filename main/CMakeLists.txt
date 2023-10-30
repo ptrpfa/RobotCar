@@ -1,7 +1,7 @@
 add_executable(main
         main.c
-        ${CMAKE_CURRENT_LIST_DIR}/../server/cgi.c 
-        ${CMAKE_CURRENT_LIST_DIR}/../server/ssi.c
+        ${CMAKE_CURRENT_LIST_DIR}/../wifi/cgi.c 
+        ${CMAKE_CURRENT_LIST_DIR}/../wifi/ssi.c
         )
 
 target_include_directories(main PRIVATE
@@ -9,7 +9,7 @@ target_include_directories(main PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/..
         ${CMAKE_CURRENT_LIST_DIR}/../ultrasonic
         ${CMAKE_CURRENT_LIST_DIR}/../motor
-        ${CMAKE_CURRENT_LIST_DIR}/../server
+        ${CMAKE_CURRENT_LIST_DIR}/../wifi
         )
 
 # pull in common dependencies

@@ -21,10 +21,11 @@ include(FreeRTOS_Kernel_import.cmake)
 
 if (NOT PICO_NO_HARDWARE)
     add_subdirectory(main)
-    add_subdirectory(ultrasonic)
-    add_subdirectory(irline)
     add_subdirectory(motor)
+    add_subdirectory(irline)
+    add_subdirectory(ultrasonic)
+    add_subdirectory(wifi)
+    add_subdirectory(encoder)
     add_subdirectory(magnetometer)
 endif ()
-
-add_subdirectory(server)
+    
