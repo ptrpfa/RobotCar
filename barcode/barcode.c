@@ -63,7 +63,7 @@ char* get_barcode_char() {
     */
 
     // Initialise lookup character
-    char* lookup_char = NULL;
+    char* lookup_char = "ERROR";
 
     // Initialise array used to store each barcode character
     char* array_char[TOTAL_CHAR] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", 
@@ -108,93 +108,88 @@ char* get_barcode_char() {
 
 // Function to read from ADC
 bool read_barcode(struct repeating_timer *t) {
-    /* Read from IR sensor */
+    // Get current speed of the car in cm/s (to link with motor driver)
+    current_speed = 3;
+
+    // Calculate minimum amount of time that must be elapsed to scan the thinnest narrow bar and a wide bar
+    min_time_narrow_bar = (THINNEST_BAR / current_speed) * 1000000;
+    min_time_wide_bar = min_time_narrow_bar * WIDTH_THRESHOLD;     
+
     // Keep a copy of the last sampling average
     last_sample_avg = current_sample_avg;
 
     // Capture ADC sample readings
     current_sample_avg = get_adc_sample_average();
+    // current_sample_avg = adc_read() * conversion_factor;
 
-    // Get current time (from boot) and calculate hours, minutes, seconds, and milliseconds
-    uint64_t current_time = time_us_64();
-    uint64_t milliseconds = current_time / 1000 % 1000;
-    uint64_t seconds = (current_time / 1000000) % 60;
-    uint64_t minutes = (current_time / 60000000) % 60;
-    uint64_t hours = (current_time / 3600000000) % 24;
+    // Get current color scanned (0: White, 1: Black)
+    current_color = (current_sample_avg >= MIN_BLACK_VOLTAGE) ? 1 : 0;
 
-    // Check current color scanned
-    current_color = (current_sample_avg >= BLACK_VOLTAGE) ? 1 : 0; // 0: White, 1: Black
-
-    /* Check for change in color/state */
     // Calculate difference in voltage between current and last sample
     float voltage_difference = (fabs(current_sample_avg - last_sample_avg) / current_sample_avg) * 100;
-    bool color_change = voltage_difference >= MIN_VOLTAGE_DIFF;
+
+    // Get current time (from boot)
+    uint64_t current_time = time_us_64();
 
     // Calculate difference between last state change time and current time
     uint64_t time_diff = current_time - last_state_change_time;
-    bool valid_time_diff = time_diff >= MIN_TIME_DIFF;
 
-    // Compute boolean check
-    bool change_state = (current_color != last_scanned_color) && color_change && valid_time_diff;
+    // bool first_read = strcmp(scanned_code, "\0") == 0 && current_color == 0;
 
-    printf("\n\n%02lld:%02lld:%02lld:%03lld => Color: %d", hours, minutes, seconds, milliseconds, last_scanned_color);
-    printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
-    printf("\nLast sampling average: %f V\n", last_sample_avg); 
-    printf("\nTIME DIFFERENCE: %02lld microseconds", time_diff);
-    printf("\nVOLTAGE DIFFERENCE: %f %%", voltage_difference);
+    // Check for a valid change in state (not first read, color has changed, voltage difference is valid and time difference is valid)
+    if((current_color != last_scanned_color) && (voltage_difference >= MIN_VOLTAGE_DIFF) && (time_diff >= min_time_narrow_bar)) {
+        // Get the type of the previous bar scanned (0: Narrow, 1: Wide)
+        last_scanned_type = (time_diff >= min_time_wide_bar) ? 1 : 0;
 
-    
-    if(change_state) {
-        printf("\n~~~~~~COLOR CHANGE~~~~~~~~~\n");
-        // Update last state change time
+        // Update last state change time and last scanned color
         last_state_change_time = current_time;
         last_scanned_color = current_color;
+
+        // Add binary representation of barcode and update white or black bar array
+        // Check if the string is empty and update it accordingly
+        if (strcmp(scanned_code, "\0") == 0) {
+            strcpy(scanned_code, "");  // Clear the initial string
+        }
+        (last_scanned_type == 0) ? strcat(scanned_code, "0") : strcat(scanned_code, "1");
+        (current_color == 0) ? white_bar[last_scanned_type]++ : black_bar[last_scanned_type]++;
+
+        // Get current time in terms of hours, minutes, seconds, and milliseconds
+        uint64_t milliseconds = current_time / 1000 % 1000;
+        uint64_t seconds = (current_time / 1000000) % 60;
+        uint64_t minutes = (current_time / 60000000) % 60;
+        uint64_t hours = (current_time / 3600000000) % 24;
+
+        // Print for debugging
+        printf("\n\n~~~~~~PREVIOUS BAR SCANNED~~~~~~~~~\n");
+        printf("\n%02lld:%02lld:%02lld:%03lld => Color: %d, Bar: %d", hours, minutes, seconds, milliseconds, last_scanned_color, last_scanned_type);
+        printf("\nTIME DIFFERENCE: %02lld microseconds", time_diff);
+        printf("\nSCANNED CODE: %s", scanned_code);
+        
+        // Check for barcode
+        if(strlen(scanned_code) == 9) {
+            printf("\n%s: %s\n", scanned_code, get_barcode_char());
+
+            // Reset
+            strcpy(scanned_code, "\0");
+            white_bar[0] = 0;
+            white_bar[1] = 0;
+            black_bar[0] = 0;
+            black_bar[1] = 0;
+            last_scanned_color = 2;
+            last_scanned_type = 2; 
+        }
     }
-
-
-    // Check for state changes
-    // if(check_state_change()) {
-    //     // Check if nothing has been scanned yet
-    //     if(current_color == -1) {
-    //         // Set current color to black
-    //         current_color = 1;
-    //         printf("Current color is black!");
-    //         printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
-    //     } 
-    //     else if(current_color == 0) {
-    //         // Set current color to black
-    //         current_color = 1;
-    //         printf("Current color is black!");
-    //         printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
-    //     }
-    //     else {
-    //         // Set current color to white
-    //         current_color = 0;
-    //         printf("Current color is white!");
-    //         printf("\nCurrent sampling average: %f V\n", current_sample_avg); 
-    //     }
-    //     // scanned_code = "000101010";
-    //     // white_bar[0] = 1;
-    //     // white_bar[1] = 3;
-    //     // black_bar[0] = 5;
-    //     // black_bar[1] = 0;
-    //     // printf("%s: %s\n", "001010010", get_barcode_char());
-    // }
-    // else {
-    //     printf("No state change!");
-
-    // }
-
+    else {
+        // Update last scanned color
+        last_scanned_color = current_color;
+    }
     
-    
-
+    // Return to caller
     return true;
-
 }
 
 // Program entrypoint
 int main() {
-
     // Initialise standard I/O
     stdio_init_all();
     
@@ -205,12 +200,11 @@ int main() {
     struct repeating_timer barcode_timer; 
 
     // Start periodic timer to periodically read for barcodes
-    add_repeating_timer_ms(IR_SENSOR_PERIODIC_INTERVAL, read_barcode, NULL, &barcode_timer);
+    add_repeating_timer_ms(-IR_SENSOR_PERIODIC_INTERVAL, read_barcode, NULL, &barcode_timer);
 
     // Loop forever
     while(true) {
         // Perform no operations indefinitely
         tight_loop_contents();
     };
-    
 }
