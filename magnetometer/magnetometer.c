@@ -86,8 +86,7 @@ void read_magnetometer(mag_t *mag) {
 
 int32_t get_angle(mag_t *mag) {
    int32_t angle = 0; 
-   // Get angle in degrees
-   angle = atan2(mag->x, mag->y)*180.0/M_PI;
+   angle = atan2(mag->x, mag->y)*180.0/M_PI; // Get angle in degrees
    if(angle < 0){
     angle += 360;
    }
