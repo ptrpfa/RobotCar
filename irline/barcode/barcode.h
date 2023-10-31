@@ -24,18 +24,20 @@
 // Thresholds
 #define MIN_VOLTAGE_DIFF 10                                         // Minimum percentage difference of ADC voltage readings for a change in state
 #define WIDTH_THRESHOLD 3.0                                         // Minimum threshold difference between the time it takes to scan a wide bar over a narrow bar (ratio between time to scan a wide: time to scan a narrow)
-#define THINNEST_BAR 0.5                                            // Width of thinnest barcode bar (cm) [DEPENDENT ON THICKNESS OF BARCODES!!]
+#define THINNEST_BAR 0.5                                            // Width of thinnest barcode bar (cm) [DEPENDENT ON THICKNESS OF BARCODES!!, to change to use MOVING AVERAGE]
 
 // Global variables
 const float conversion_factor = 3.3f / (1 << 12);                   // ADC's resolution, 3.3 VREF for 12-bit ADC
 float last_sample_avg = 0.0;                                        // Variable to store average of last ADC sample readings (voltage)
 float current_sample_avg = 0.0;                                     // Variable to store current average of ADC sample readings (voltage)
+bool start_scan = true;                                             // Boolean to store current scan status (False: Idle, True: Scanning)
 uint16_t current_color = 0;                                         // Variable to store the current colour scanned (0: White, 1: Black)
 uint16_t last_scanned_color = 2;                                    // Variable to store last colour scanned (2: NA, 0: White, 1: Black)
 uint16_t last_scanned_type = 2;                                     // Variable to store the type of bar scanned (2: NA, 0: Narrow, 1: Wide)
 uint64_t last_state_change_time = 0;                                // Variable to store the last time where the state changed (microseconds)
 uint16_t white_bar[2] = {0};                                        // Array to store the number of narrow and wide white bars [narrow, wide]
 uint16_t black_bar[2] = {0};                                        // Array to store the number of narrow and wide black bars [narrow, wide]
+uint64_t scanned_timings[CODE_LENGTH] = {0};                        // Array to store the time it took to scan each bar
 char scanned_code[CODE_LENGTH + 1] = "\0";                          // String to store scanned barcode binary representation
 double current_speed = 0;                                           // Variable to storye the current speed for car to move (cm/s)
 double min_time_narrow_bar = 0;                                     // Variable to storye the minimum amount of time that must be elapsed to scan the thinnest narrow bar
@@ -44,5 +46,6 @@ double min_time_wide_bar = 0;                                       // Variable 
 /* Function Prototypes */
 void setup_barcode_pin();                                           // Function to setup barcode pin
 float __not_in_flash_func(get_adc_sample_average)();                // Function to read samples from the ADC
+void reverse_string(char* str);                                     // Function to reverse a string
 char* get_barcode_char();                                           // Function to lookup scanned barcode to get its matching character
 bool read_barcode(struct repeating_timer *t);                       // Function to read IR sensor values

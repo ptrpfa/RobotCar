@@ -54,6 +54,26 @@ float __not_in_flash_func(get_adc_sample_average)() {
     return sample_average;
 }
 
+// Function to reverse a string
+void reverse_string(char* str) {
+    // if the string is empty
+    if (!str) {
+        return;
+    }
+    // pointer to start and end at the string
+    int i = 0;
+    int j = strlen(str) - 1;
+ 
+    // reversing string
+    while (i < j) {
+        char c = str[i];
+        str[i] = str[j];
+        str[j] = c;
+        i++;
+        j--;
+    }
+}
+
 // Function to lookup barcode character
 char* get_barcode_char() {
     /*   
@@ -92,13 +112,31 @@ char* get_barcode_char() {
 
     // Ensure that the length of the barcode(9), number of black bars(5), number of white bars(4), and number of wide bars(3) is correct
     if((strlen(scanned_code) == CODE_LENGTH) && (black_bar[0] + black_bar[1] == 5) && (white_bar[0] + white_bar[1] == 4) && (white_bar[1] + black_bar[1] == 3)) {
-        // Loop through all possible binary and reverse binary representations for a matching lookup character
+        // Initialise variable to check for matches
+        bool match = false;
+        // Loop through all possible binary representations for a matching lookup character
         for(int i = 0; i < TOTAL_CHAR; i++) {
-            if((strcmp(scanned_code, array_code[i]) == 0) || (strcmp(scanned_code, array_reverse_code[i]) == 0)) {
+            if(strcmp(scanned_code, array_code[i]) == 0) {
                 // Update lookup character and immediately break out of loop
                 lookup_char = array_char[i];
+                match = true;
                 break;
             }
+        }
+        // Check for a match in the previous check
+        if(!match) {
+            // Reverse string
+            // reverse_string(scanned_code);
+            // Loop through all possible reverse binary representations for a matching lookup character
+            for(int i = 0; i < TOTAL_CHAR; i++) {
+                if(strcmp(scanned_code, array_reverse_code[i]) == 0) {
+                    // Update lookup character and immediately break out of loop
+                    lookup_char = array_char[i];
+                    break;
+                }
+            }
+            // Reverse string back to normal again
+            // reverse_string(scanned_code);
         }
     }
 
@@ -109,7 +147,7 @@ char* get_barcode_char() {
 // Function to read from ADC
 bool read_barcode(struct repeating_timer *t) {
     // Get current speed of the car in cm/s (to link with motor driver)
-    current_speed = 3;
+    current_speed = 2.5;
 
     // Calculate minimum amount of time that must be elapsed to scan the thinnest narrow bar and a wide bar
     min_time_narrow_bar = (THINNEST_BAR / current_speed) * 1000000;
@@ -121,6 +159,7 @@ bool read_barcode(struct repeating_timer *t) {
     // Capture ADC sample readings
     current_sample_avg = get_adc_sample_average();
     // current_sample_avg = adc_read() * conversion_factor;
+    // printf("\ncurrent reading: %f", current_sample_avg);
 
     // Get current color scanned (0: White, 1: Black)
     current_color = (current_sample_avg >= MIN_BLACK_VOLTAGE) ? 1 : 0;
@@ -134,50 +173,64 @@ bool read_barcode(struct repeating_timer *t) {
     // Calculate difference between last state change time and current time
     uint64_t time_diff = current_time - last_state_change_time;
 
-    // bool first_read = strcmp(scanned_code, "\0") == 0 && current_color == 0;
-
     // Check for a valid change in state (not first read, color has changed, voltage difference is valid and time difference is valid)
     if((current_color != last_scanned_color) && (voltage_difference >= MIN_VOLTAGE_DIFF) && (time_diff >= min_time_narrow_bar)) {
-        // Get the type of the previous bar scanned (0: Narrow, 1: Wide)
-        last_scanned_type = (time_diff >= min_time_wide_bar) ? 1 : 0;
+        /* Check current scan status */
+        // IDLE
+        if(start_scan == false) {
+            printf("\nSCAN STATUS: IDLE");
+            // Change scan status to start scanning in the next round
+            start_scan = true;
+        }
+        // START SCAN or SCANNING
+        else {
+            // Get the type of the previous bar scanned (0: Narrow, 1: Wide)
+            last_scanned_type = (time_diff >= min_time_wide_bar) ? 1 : 0;
 
+            // Add binary representation of barcode and update white or black bar array
+            // Check if the string is empty and update it accordingly
+            if (strcmp(scanned_code, "\0") == 0) {
+                strcpy(scanned_code, "");  // Clear the initial string
+            }
+            (last_scanned_type == 0) ? strcat(scanned_code, "0") : strcat(scanned_code, "1");
+            (last_scanned_color == 0) ? white_bar[last_scanned_type]++ : black_bar[last_scanned_type]++;
+
+            // Get current time in terms of hours, minutes, seconds, and milliseconds
+            uint64_t milliseconds = current_time / 1000 % 1000;
+            uint64_t seconds = (current_time / 1000000) % 60;
+            uint64_t minutes = (current_time / 60000000) % 60;
+            uint64_t hours = (current_time / 3600000000) % 24;
+
+            // Print for debugging
+            printf("\n\nSCAN STATUS: SCANNING");
+            printf("\n~~~~~~PREVIOUS BAR SCANNED~~~~~~~~~\n");
+            printf("\n%02lld:%02lld:%02lld:%03lld => Color: %s, Bar: %s", hours, minutes, seconds, milliseconds, (last_scanned_color == 0) ? "White" : "Black", (last_scanned_type == 0) ? "Thin" : "Thick");
+            printf("\nTIME DIFFERENCE: %02lld microseconds", time_diff);
+            printf("\nSCANNED CODE: %s", scanned_code);
+            
+            // Check for barcode
+            if(strlen(scanned_code) == CODE_LENGTH) {
+
+                // Sanity check and change to top 3 bars if wrong
+                // something here
+
+                printf("\n\nCode Received!\n%s: %s\n", scanned_code, get_barcode_char());
+
+                // Reset
+                strcpy(scanned_code, "\0");
+                white_bar[0] = 0;
+                white_bar[1] = 0;
+                black_bar[0] = 0;
+                black_bar[1] = 0;
+                last_scanned_color = 2;
+                last_scanned_type = 2; 
+                // Reset scan status to IDLE state
+                start_scan = false;
+            }
+        }
         // Update last state change time and last scanned color
-        last_state_change_time = current_time;
+        last_state_change_time = time_us_64();
         last_scanned_color = current_color;
-
-        // Add binary representation of barcode and update white or black bar array
-        // Check if the string is empty and update it accordingly
-        if (strcmp(scanned_code, "\0") == 0) {
-            strcpy(scanned_code, "");  // Clear the initial string
-        }
-        (last_scanned_type == 0) ? strcat(scanned_code, "0") : strcat(scanned_code, "1");
-        (current_color == 0) ? white_bar[last_scanned_type]++ : black_bar[last_scanned_type]++;
-
-        // Get current time in terms of hours, minutes, seconds, and milliseconds
-        uint64_t milliseconds = current_time / 1000 % 1000;
-        uint64_t seconds = (current_time / 1000000) % 60;
-        uint64_t minutes = (current_time / 60000000) % 60;
-        uint64_t hours = (current_time / 3600000000) % 24;
-
-        // Print for debugging
-        printf("\n\n~~~~~~PREVIOUS BAR SCANNED~~~~~~~~~\n");
-        printf("\n%02lld:%02lld:%02lld:%03lld => Color: %d, Bar: %d", hours, minutes, seconds, milliseconds, last_scanned_color, last_scanned_type);
-        printf("\nTIME DIFFERENCE: %02lld microseconds", time_diff);
-        printf("\nSCANNED CODE: %s", scanned_code);
-        
-        // Check for barcode
-        if(strlen(scanned_code) == 9) {
-            printf("\n%s: %s\n", scanned_code, get_barcode_char());
-
-            // Reset
-            strcpy(scanned_code, "\0");
-            white_bar[0] = 0;
-            white_bar[1] = 0;
-            black_bar[0] = 0;
-            black_bar[1] = 0;
-            last_scanned_color = 2;
-            last_scanned_type = 2; 
-        }
     }
     else {
         // Update last scanned color
