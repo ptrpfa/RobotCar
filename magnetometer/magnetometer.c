@@ -5,7 +5,7 @@
 #include "pico/stdlib.h"
 #include <pico/binary_info.h>
 #include "hardware/i2c.h"
-#include "lsm303dlh.h"
+#include "magnetometer.h"
 
 #define MAGNETOMETER_ADDRESS 0x1E // The I2C address of the LSM303DLHC magnetometer
 #define I2C_BAUD 400 // 400 or 100 (kHz)
