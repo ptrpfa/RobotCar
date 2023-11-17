@@ -28,20 +28,20 @@
 
 // Global variables
 const float conversion_factor = 3.3f / (1 << 12);                   // ADC's resolution, 3.3 VREF for 12-bit ADC
-float last_sample_avg = 0.0;                                        // Variable to store average of last ADC sample readings (voltage)
-float current_sample_avg = 0.0;                                     // Variable to store current average of ADC sample readings (voltage)
 bool start_scan = true;                                             // Boolean to store current scan status (False: Idle, True: Scanning)
+float current_sample_avg = 0.0;                                     // Variable to store current average of ADC sample readings (voltage)
+float last_sample_avg = 0.0;                                        // Variable to store average of last ADC sample readings (voltage)
 uint16_t current_color = 0;                                         // Variable to store the current colour scanned (0: White, 1: Black)
 uint16_t last_scanned_color = 2;                                    // Variable to store last colour scanned (2: NA, 0: White, 1: Black)
 uint16_t last_scanned_type = 2;                                     // Variable to store the type of bar scanned (2: NA, 0: Narrow, 1: Wide)
 uint64_t last_state_change_time = 0;                                // Variable to store the last time where the state changed (microseconds)
 uint16_t white_bar[2] = {0};                                        // Array to store the number of narrow and wide white bars [narrow, wide]
 uint16_t black_bar[2] = {0};                                        // Array to store the number of narrow and wide black bars [narrow, wide]
-uint64_t scanned_timings[CODE_LENGTH] = {0};                        // Array to store the time it took to scan each bar
 char scanned_code[CODE_LENGTH + 1] = "\0";                          // String to store scanned barcode binary representation
-double current_speed = 0;                                           // Variable to storye the current speed for car to move (cm/s)
-double min_time_narrow_bar = 0;                                     // Variable to storye the minimum amount of time that must be elapsed to scan the thinnest narrow bar
-double min_time_wide_bar = 0;                                       // Variable to storye the minimum amount of time that must be elapsed to scan a wide bar
+double current_speed = 0;                                           // Variable to store the current speed for car to move (cm/s)
+double min_time_narrow_bar = 0;                                     // Variable to store the minimum amount of time that must be elapsed to scan the thinnest narrow bar
+double min_time_wide_bar = 0;                                       // Variable to store the minimum amount of time that must be elapsed to scan a wide bar
+uint64_t scanned_timings[CODE_LENGTH] = {0};                        // Array to store the time it took to scan each bar
 
 /* Function Prototypes */
 void setup_barcode_pin();                                           // Function to setup barcode pin

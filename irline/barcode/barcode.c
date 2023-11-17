@@ -153,6 +153,7 @@ bool read_barcode(struct repeating_timer *t) {
     min_time_narrow_bar = (THINNEST_BAR / current_speed) * 1000000;
     min_time_wide_bar = min_time_narrow_bar * WIDTH_THRESHOLD;     
 
+    /* Read from IR sensor */
     // Keep a copy of the last sampling average
     last_sample_avg = current_sample_avg;
 
@@ -167,6 +168,7 @@ bool read_barcode(struct repeating_timer *t) {
     // Calculate difference in voltage between current and last sample
     float voltage_difference = (fabs(current_sample_avg - last_sample_avg) / current_sample_avg) * 100;
 
+    /* TO BE REMOVED? */
     // Get current time (from boot)
     uint64_t current_time = time_us_64();
 
@@ -241,6 +243,23 @@ bool read_barcode(struct repeating_timer *t) {
     return true;
 }
 
+// Function that is invoked upon a button press
+void button_callback()
+{
+    // Reset
+    strcpy(scanned_code, "\0");
+    white_bar[0] = 0;
+    white_bar[1] = 0;
+    black_bar[0] = 0;
+    black_bar[1] = 0;
+    last_scanned_color = 2;
+    last_scanned_type = 2; 
+    // Reset scan status to IDLE state
+    start_scan = false;
+
+    printf("\nRESET BARCODE!\n\n");
+}
+
 // Program entrypoint
 int main() {
     // Initialise standard I/O
@@ -254,6 +273,16 @@ int main() {
 
     // Start periodic timer to periodically read for barcodes
     add_repeating_timer_ms(-IR_SENSOR_PERIODIC_INTERVAL, read_barcode, NULL, &barcode_timer);
+
+    /* TEMPORARY (For Maker Kit button reset)*/
+    // Configure GPIO pin as input, with a pull-up resistor (Active-Low)
+    gpio_init(20);
+    gpio_set_dir(20, GPIO_IN);
+    gpio_set_pulls(20, true, false);
+
+    // Enable interrupt on specified pin upon a button press (rising or falling edge)
+    gpio_set_irq_enabled_with_callback(20, GPIO_IRQ_EDGE_FALL, true, &button_callback);
+
 
     // Loop forever
     while(true) {
