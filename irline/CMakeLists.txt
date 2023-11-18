@@ -1,2 +1,2 @@
 add_subdirectory(barcode)
-add_subdirectory(wall_detection)
+add_subdirectory(wallsensor)
