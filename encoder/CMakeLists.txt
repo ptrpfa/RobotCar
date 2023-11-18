@@ -27,6 +27,7 @@ add_library(encoder_lib
 target_link_libraries(encoder_lib
     pico_stdlib 
     hardware_pwm
+    motor_lib
     )
 
 # create map/bin/hex file etc.

@@ -1,99 +1,70 @@
 // Control L and R encoder
 
-#include <stdio.h>
-#include "pico/stdlib.h"
-#include "hardware/gpio.h"
-#include "hardware/timer.h"
 #include "encoder.h"
-#include "motor.h"
+// #include "motor.h"
 
 // Global variable declaration
-volatile uint32_t pulseCountL = 0;
-volatile uint32_t pulseCountR = 0;
-uint32_t finalTimeL = 0; 
-uint32_t initialTimeL = 0;
-uint32_t finalTimeR = 0; 
-uint32_t initialTimeR = 0;
+volatile bool movedOneGrid = false;
+uint32_t pulseCountL = 0;
+uint32_t pulseCountR = 0;
+double movedDistance = 0.0;
+double totalDistanceL = 0.0;
+double totalDistanceR = 0.0;
 
-// Function to get motor speed 
-// 0 - left, 1 - right 
-void getSpeed(int encoder, uint32_t pulseCount) {
-    // Calculate the duration for 80 pulses in us
-    uint32_t duration;
-
-    // L encoder time calculation
-    if (encoder == 0) {
-        // Find total elapsed time
-        duration = finalTimeL - initialTimeL;
-
-        // Reset pulse count for L encoder
-        pulseCountL = 0;
-    } 
-    // R encoder time calculation
-    else {
-        // Find total elapsed time
-        duration = finalTimeR - initialTimeR;
-
-        // Reset pulse count for R encoder
-        pulseCountR = 0;
-    }
-
-    // Calculate and print motor speed in cm/s
+// Function to get motor speed and distance
+void getSpeedAndDistance(int encoder, uint32_t pulseCount, double *totalDistance) {
+    // Calculate motor speed in cm/s
     double distancePerHole = ENCODER_CIRCUMFERENCE / ENCODER_NOTCH;
-    double speed = (distancePerHole * pulseCount) / ((double)duration / 1000000.0);
-    
-    // L encoder printing
+    double speed = (distancePerHole * pulseCount) / 1.0;
+
+    // Calculate and accumulate the distance
+    double distance = speed * 1.0;
+    *totalDistance += distance;
+    movedDistance += distance;
+
+    // Print motor speed and total distance
     if (encoder == 0) {
-        printf("L Motor Speed: %.2lf cm/s\n", speed);
-    }
-    // R encoder printing
+        printf("L Motor Speed: %.2lf cm/s, L Total Distance: %.2lf cm\n", speed, *totalDistance);
+    } 
     else {
-        printf("R Motor Speed: %.2lf cm/s\n", speed);
+        printf("R Motor Speed: %.2lf cm/s, R Total Distance: %.2lf cm\n", speed, *totalDistance);
+    }
+
+    // If car has moved at least 1 grid (17cm), trigger flag
+    if (movedDistance >= 17) {
+        printf("A GRID PASSED\n");
+
+        // Trigger 1 grid moved flag
+        movedOneGrid = true;
+
+        // Reset the distance moved
+        movedDistance = 0.0;
     }
 }
 
-// Function to count each encoder pulse
+// Function to count each encoder's pulse
 void encoderPulse(uint gpio, uint32_t events) {
-    // Get current time if there is interrupt
-    uint32_t timestamp = time_us_32();
-
     // L encoder interrupted
     if (gpio == L_ENCODER_OUT) {
-        // Increase L encoder pulse count if there is interrupt
         pulseCountL++;
-
-        // Store initial timestamp when first L encoder pulse is received
-        if (pulseCountL == 1) {
-            initialTimeL = timestamp;
-        }
-
-        // Update current time
-        finalTimeL = timestamp;
     } 
     // R encoder interrupted
-    else {
-        // Increase R encoder pulse count if there is interrupt
+    else if (gpio == R_ENCODER_OUT) {
         pulseCountR++;
-
-        // Store initial timestamp when first R encoder pulse is received
-        if (pulseCountR == 1) {
-            initialTimeR = timestamp;
-        }
-        
-        // Update current time
-        finalTimeR = timestamp;
     }
+}
 
-    // Check if 80 pulses are counted for the L encoder
-    if (gpio == L_ENCODER_OUT && pulseCountL >= 80) {
-        // Call getSpeed function when 80 pulses are counted
-        getSpeed(0, pulseCountL);
-    } 
-    // Check if 80 pulses are counted for the R encoder
-    else if (gpio == R_ENCODER_OUT && pulseCountR >= 80) {
-        // Call getSpeed function when 80 pulses are counted
-        getSpeed(1, pulseCountR);
-    }
+// Function to interrupt every second
+bool encoderCallback(struct repeating_timer *t) {
+    // Call getSpeedAndDistance function every second
+    getSpeedAndDistance(0, pulseCountL, &totalDistanceL);
+    getSpeedAndDistance(1, pulseCountR, &totalDistanceR);
+
+    // Reset the pulse counts
+    pulseCountL = 0;
+    pulseCountR = 0;
+
+    return true;
 }
 
 // Function to initialize pins for encoders
@@ -127,27 +98,42 @@ void initEncoderSetup() {
     gpio_put(R_ENCODER_POW, 1);
 }
 
+/*
 int main() {
     stdio_init_all();
 
-    // Initialise motor GPIO pins
+    // Initialise motor GPIO pins and PWM
     initMotorSetup();
-
-    // Initialise motor PWM
     initMotorPWM();
 
     // Initialise encoder GPIO pins
     initEncoderSetup();
 
+    // Set up a timer to generate interrupts every second
+    struct repeating_timer timer;
+    add_repeating_timer_ms(1000, encoderCallback, NULL, &timer);
+
     while (1) {
         // Run at half duty cycle
         moveMotor(1563);
+        sleep_ms(5000);
+
+        // Turn left at full duty cycle
+        moveMotor(3165);
+        turnMotor(1);
+        sleep_ms(250);
+
+        // Turn right at full duty cycle
+        moveMotor(3165);
+        turnMotor(0);
         sleep_ms(250);
 
         // Run at 32% duty cycle
-        moveMotor(1000);
-        sleep_ms(10000);
+        // moveMotor(1000);
+        moveMotor(3165);
+        sleep_ms(5000);
     }
 
     return 0;
 }
+*/
