@@ -92,6 +92,9 @@ void stopMotor() {
 // Function to turn
 // 0 - left, 1 - right 
 void turnMotor(int direction) {
+    // pwm_set_chan_level(pwm_gpio_to_slice_num(L_MOTOR_ENA), pwm_gpio_to_channel(L_MOTOR_ENA), pwm);
+    // pwm_set_chan_level(pwm_gpio_to_slice_num(R_MOTOR_ENB), pwm_gpio_to_channel(R_MOTOR_ENB), pwm);
+
     // Motor to turn left 
     if (direction == 0) {
         // Reverse left wheel, forward right wheel
@@ -103,8 +106,6 @@ void turnMotor(int direction) {
         // Enable the enable pins
         gpio_put(L_MOTOR_ENA, 1);
         gpio_put(R_MOTOR_ENB, 1);
-
-        sleep_ms(380);
     }   
     // Motor to turn right
     else {
@@ -117,12 +118,7 @@ void turnMotor(int direction) {
         // Enable the enable pins
         gpio_put(L_MOTOR_ENA, 1);
         gpio_put(R_MOTOR_ENB, 1);
-
-        sleep_ms(380);
     }
-
-    // Stop motor after turning
-    stopMotor();
 }
 
 /*
