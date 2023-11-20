@@ -10,18 +10,19 @@
 int startCar = 0;
 
 // WIFI Credentials
-const char WIFI_SSID[] = "SINGTEL-WV58";
-const char WIFI_PASSWORD[] = "7tn83dwfae";
+const char WIFI_SSID[] = "";
+const char WIFI_PASSWORD[] = "";
 
-/*
-int main() {
+int main()
+{
     stdio_init_all();
 
     cyw43_arch_init();
     cyw43_arch_enable_sta_mode();
 
     // Connect to the WiFI network - loop until connected
-    while(cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000) != 0){
+    while (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000) != 0)
+    {
         printf("Attempting to connect...\n");
     }
 
@@ -31,7 +32,7 @@ int main() {
     // Initialise Web Server, SSI and CGI handler
     httpd_init();
     printf("Http server initialised\n");
-    ssi_init(); 
+    ssi_init();
     printf("SSI Handler initialised\n");
     cgi_init();
     printf("CGI Handler initialised\n");
@@ -41,7 +42,7 @@ int main() {
     initMotorPWM();
 
     // Initialise encoder GPIO pins
-    initEncoderSetup();
+    // initEncoderSetup();
 
     // Initialise ultrasonic sensor
     setupUltrasonicPins();
@@ -50,17 +51,21 @@ int main() {
 
     double cm;
 
-    while (1) {
-        if (startCar == 1) {
+    while (1)
+    {
+        if (startCar == 1)
+        {
             // Get distance from ultrasonic sensor
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 10; i++)
+            {
                 cm = getCm(state);
             }
 
             printf("Distance: %.2lf cm\n", cm);
 
             // If an obstacle is too close, stop motor and turn left
-            if (cm < 22) {            
+            if (cm < 22)
+            {
                 // // Get distance from ultrasonic sensor
                 // for (int i = 0; i < 10; i++) {
                 //     cm = getCm(state);
@@ -71,20 +76,21 @@ int main() {
                 sleep_ms(1000);
                 turnMotor(1);
                 // }
-            } 
-            else {
+            }
+            else
+            {
                 // Run the motor at half of the duty cycle
                 // moveMotor(1563);
                 moveMotor(3125);
             }
-    
+
             sleep_ms(250);
         }
-        else {
+        else
+        {
             stopMotor();
         }
     }
 
     return 0;
 }
-*/
