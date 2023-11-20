@@ -20,10 +20,10 @@
 // Global variables
 bool start_scan = false;                                             // Boolean to store current scan status (False: Idle, True: Scanning)
 // something to check end of scan (3 chars scanned)
-uint16_t scanned_bars = 0;                                          // Count of number of bars scanned
 uint64_t last_state_change_time = 0;                                // Variable to store the last time where the state changed (microseconds), used for measuring the time it takes to scan each bar
-char scanned_code[CODE_LENGTH + 1] = "";                          // String to store scanned barcode binary representation
 uint64_t scanned_timings[CODE_LENGTH] = {0};                        // Array to store the time it took to scan each bar
+uint16_t scanned_bars = 0;                                          // Count of number of bars scanned
+char scanned_code[CODE_LENGTH + 1] = "";                          // String to store scanned barcode binary representation
 
 /*  
     Color: voltage or use edge rise/fall
@@ -111,7 +111,7 @@ void reset() {
     scanned_bars = 0;
 
     // Reset scanned code
-    strcpy(scanned_code, "");
+    // strcpy(scanned_code, ""); 
 
     // Reset array of scanned timings
     for(uint16_t i = 0; i < CODE_LENGTH; i++) {
@@ -125,34 +125,35 @@ void reset() {
 
 // Function to parse bars scanned
 void parse_bars() {
-    // Initialise array of indexes
-    uint16_t top_idx[3] = {0, 1, 2};
 
-    // Perform a simple bubble sort to get the top 3 indices
+    // Create an array of indices and initialize it with values from 0 to CODE_LENGTH-1
+    int indices[CODE_LENGTH];
+    for (int i = 0; i < CODE_LENGTH; ++i) {
+        indices[i] = i;
+    }
+
+    // Bubble sort the indices array based on the values in scanned_timings
     for (int i = 0; i < CODE_LENGTH - 1; ++i) {
         for (int j = 0; j < CODE_LENGTH - i - 1; ++j) {
-            if (scanned_timings[top_idx[j]] < scanned_timings[top_idx[j + 1]]) {
-                // Swap indices if the timing is smaller
-                int temp = top_idx[j];
-                top_idx[j] = top_idx[j + 1];
-                top_idx[j + 1] = temp;
+            if (scanned_timings[indices[j]] < scanned_timings[indices[j + 1]]) {
+                // Swap indices if the value at j is less than the value at j + 1
+                int temp = indices[j];
+                indices[j] = indices[j + 1];
+                indices[j + 1] = temp;
             }
         }
     }
 
     // Generate the final string
-    for (int i = 0; i < CODE_LENGTH + 1; ++i) {
-        if(i == CODE_LENGTH) {
-            scanned_code[i] = '\0';
-        } 
-        else {
-            scanned_code[i] = '0';
-        }
+    for (int i = 0; i < CODE_LENGTH; ++i) {
+        scanned_code[i] = '0';
     }
+    // Null-terminate the string
+    scanned_code[CODE_LENGTH] = '\0';
 
     // Set the top 3 indices to '1'
     for (int i = 0; i < 3; ++i) {
-        scanned_code[top_idx[i]] = '1';
+        scanned_code[indices[i]] = '1';
     }
 
     printf("\n\nCode Received!\n%s: %s\n", scanned_code, get_barcode_char());
@@ -179,7 +180,7 @@ void read_barcode() {
         scanned_timings[scanned_bars] = time_us_64() - last_state_change_time;
         
         // Increment number of bars scanned
-        scanned_bars++;
+        ++scanned_bars;
 
         // Print for debugging
         printf("\n\nTime difference [%d]: %lld", scanned_bars, scanned_timings[scanned_bars - 1]);
@@ -189,7 +190,7 @@ void read_barcode() {
         if(scanned_bars == CODE_LENGTH) {
             // Parse bars scanned
             parse_bars();
-            printf("\n\nresetingg..");
+
             // Reset
             reset();
         }
@@ -210,7 +211,6 @@ void interrupt_callback()
         reset();
     }
     else {
-
         // Ensure that the time difference between current time and last button press is not within the debounce delay threshold
         if((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS) {
             // Read barcode
