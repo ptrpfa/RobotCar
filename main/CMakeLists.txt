@@ -9,7 +9,13 @@ target_include_directories(main PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/..
         ${CMAKE_CURRENT_LIST_DIR}/../ultrasonic
         ${CMAKE_CURRENT_LIST_DIR}/../motor
+        ${CMAKE_CURRENT_LIST_DIR}/../encoder
         ${CMAKE_CURRENT_LIST_DIR}/../wifi
+        ${CMAKE_CURRENT_LIST_DIR}/../irline/wallsensor
+        )
+
+target_compile_definitions(main PRIVATE
+        PICO_MAX_SHARED_IRQ_HANDLERS=5
         )
 
 # pull in common dependencies
@@ -19,6 +25,8 @@ target_link_libraries(main
         hardware_adc
         ultrasonic_lib
         motor_lib
+        encoder_lib
+        wallsensor_lib
         )
 
 # create map/bin/hex file etc.
