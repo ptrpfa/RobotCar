@@ -68,6 +68,10 @@
         left: 0;
         right: 0;
         bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
       }
     </style>
   </head>
@@ -119,11 +123,6 @@
           value="<!--#height-->"
         />
         <div class="grid"></div>
-        <!-- <img
-          src="/assets/route.png"
-          alt="Route Map"
-          style="width: 100%; max-width: 100%; height: auto"
-        /> -->
       </div>
     </div>
     <script>
@@ -132,47 +131,54 @@
         const max_height = document.getElementById("max-height").value;
         var gridContainer = document.querySelector(".grid");
         gridContainer.style.gridTemplateColumns = `repeat(${max_width}, 1fr)`;
-        const grid_data = "<!--#gridmap-->";
-        const json_grid_data = JSON.parse(grid_data.replace(/'/g, '"'));
 
         const total_cells = max_height * max_width;
+        
+        function makegrid(gridmap) {
+          let json_grid_data = JSON.parse(gridmap.replace(/'/g, '"'));
 
-        var current_x;
-        var current_y;
-        var wall_details;
+          var current_x;
+          var current_y;
+          var wall_details;
+  
+          json_grid_data.forEach(function(celldata) {
+            var cell = document.createElement("div"); // Create a new div for each cell
+            cell.className = "grid-cell"; // Assign class name to the cell
+            cell.style.gridColumnStart = celldata.x + 1; // Set its location to the second column
+            cell.style.gridRowStart = celldata.y + 1; // Set its location to the first row
 
-        for (var i = 0; i < total_cells; i++) {
-          var cell = document.createElement("div"); // Create a new div for each cell
-          cell.className = "grid-cell"; // Assign class name to the cell
+            if (celldata.w[0] === 1) {
+              cell.style.borderTop = "3px solid black";
+            }
+            if (celldata.w[1] === 1) {
+              cell.style.borderBottom = "3px solid black";
+            }
+            if (celldata.w[2] === 1) {
+              cell.style.borderRight = "3px solid black";
+            }
+            if (celldata.w[3] === 1) {
+              cell.style.borderLeft = "3px solid black";
+            }
 
-          current_x = i % max_width;
-          current_y = Math.floor(i / max_width);
-
-          var item = json_grid_data.find(function (element) {
-            return element.x === current_x && element.y === current_y;
+            var content = document.createElement("div");
+            content.className = "grid-cell-content"; // For barcode
+            if (celldata.v === 2) { // Obstacle
+              content.innerHTML = "O";
+            } else if (celldata.v === 3) { // Barcode
+              content.innerHTML = "B";
+            }
+  
+            cell.appendChild(content);
+  
+            gridContainer.appendChild(cell); // Append the cell to the grid container
           });
-
-          if (item) {
-            if (item.n === 1) {
-              cell.style.borderTop = "1px solid green";
-            }
-            if (item.s === 1) {
-              cell.style.borderBottom = "1px solid green";
-            }
-            if (item.e === 1) {
-              cell.style.borderRight = "1px solid green";
-            }
-            if (item.w === 1) {
-              cell.style.borderLeft = "1px solid green";
-            }
-          }
-          var content = document.createElement("div");
-          content.className = "grid-cell-content"; // For barcode
-
-          cell.appendChild(content);
-
-          gridContainer.appendChild(cell); // Append the cell to the grid container
         }
+        
+        makegrid("<!--#grid1-->");
+        makegrid("<!--#grid2-->");
+        makegrid("<!--#grid3-->");
+        makegrid("<!--#grid4-->");
+        makegrid("<!--#grid5-->");
       });
 
       function toggleLed(status) {
