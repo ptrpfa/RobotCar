@@ -12,7 +12,7 @@
 // Sensors
 #define BTN_PIN 20                            // Maker kit button pin
 #define IR_SENSOR_PIN 18                      // IR sensor pin
-#define DEBOUNCE_DELAY_MICROSECONDS 200000      // Debounce delay in microseconds (us) 
+#define DEBOUNCE_DELAY_MICROSECONDS 70000      // Debounce delay in microseconds (us) 
 
 /* Function Prototypes */
 void setup_barcode_pin();   // Function to setup barcode pin to digital
