@@ -1,3 +1,5 @@
+// Find the shortest path to destination
+
 #include <string.h>
 #include "database.h"
 
@@ -6,7 +8,7 @@ void initAlgorithim(Database *d);
 void recurToDest(Grid *start, Grid *end, Grid *comeFrom, int recursiveCall);
 bool pushArray(Grid *array[], Grid *grid);
 void popArray(Grid *array[]);
-bool isLargerthan(Grid *array1[], Grid *array2[]);
+bool isLargerThan(Grid *array1[], Grid *array2[]);
 
 Grid *tempPath[MAXGRID] = { NULL };
 Database *database;
@@ -58,7 +60,7 @@ void recurToDest(Grid *start, Grid *end, Grid *comeFrom, int recursiveCall) {
         pushArray(tempPath, end);
 
         // If path is empty or tempPath is shorter then path
-        if(database->Path[0] == NULL || isLargerthan(database->Path, tempPath)) {
+        if(database->Path[0] == NULL || isLargerThan(database->Path, tempPath)) {
             // Replace path with the shorter one  
             memcpy(database->Path, tempPath, sizeof(tempPath));
         }
@@ -100,7 +102,7 @@ void popArray(Grid *array[]) {
 }
 
 // Function to compare two array lengths
-bool isLargerthan(Grid *array1[], Grid *array2[]) {
+bool isLargerThan(Grid *array1[], Grid *array2[]) {
     int length1 = 0;
     int length2 = 0;
 
