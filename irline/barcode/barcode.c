@@ -34,7 +34,7 @@ void reset_barcode() {
 }
 
 // Function to parse scanned bars
-char* parse_scanned_bars() {
+char parse_scanned_bars() {
     // Initialise array of indexes
     uint16_t indexes[CODE_LENGTH] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
@@ -63,10 +63,39 @@ char* parse_scanned_bars() {
     }
 
     // Initialise the decoded character
-    char* decoded_char = ERROR_CHAR;
+    char decoded_char = ERROR_CHAR;
 
     // Initialise variable to check for matches
     bool match = false;
+
+    /*   
+        NOTE: Each character in Barcode 39 is encoded using 5 black bars, 4 white bars, and 3 wide bars. To represent each of the 
+        44 unique characters, a binary representation is used, whereby 1 indicates a wide bar, and 0 indicates a narrow bar.
+        The binary representation does not capture any information on the colour of the bar (whether it is black or white).
+    */
+    // Initialise array used to store each barcode character
+    char array_char[TOTAL_CHAR] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 
+                                    'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 
+                                    'Y', 'Z', '_', '.', '$', '/', '+', '%', ' ', '*'};       
+
+    // Initialise array used to store binary representation of each character
+    char* array_code[TOTAL_CHAR] = {"000110100", "100100001", "001100001", "101100000", "000110001", "100110000", "001110000", 
+                                    "000100101", "100100100", "001100100", "100001001", "001001001", "101001000", "000011001", 
+                                    "100011000", "001011000", "000001101", "100001100", "001001100", "000011100", "100000011", 
+                                    "001000011", "101000010", "000010011", "100010010", "001010010", "000000111", "100000110", 
+                                    "001000110", "000010110", "110000001", "011000001", "111000000", "010010001", "110010000", 
+                                    "011010000", "010000101", "110000100", "010101000", "010100010", "010001010", "000101010", 
+                                    "011000100", "010010100"};
+                                    
+    // Initialise array used to store the reversed binary representation of each character
+    char* array_reverse_code[TOTAL_CHAR] = {"001011000", "100001001", "100001100", "000001101", "100011000", "000011001", 
+                                            "000011100", "101001000", "001001001", "001001100", "100100001", "100100100", 
+                                            "000100101", "100110000", "000110001", "000110100", "101100000", "001100001", 
+                                            "001100100", "001110000", "110000001", "110000100", "010000101", "110010000", 
+                                            "010010001", "010010100", "111000000", "011000001", "011000100", "011010000", 
+                                            "100000011", "100000110", "000000111", "100010010", "000010011", "000010110", 
+                                            "101000010", "001000011", "000101010", "010001010", "010100010", "010101000", 
+                                            "001000110", "001010010"};
 
     // Check scan direction
     if(!reverse_scan) {
@@ -130,7 +159,7 @@ void read_barcode() {
         // Start decoding when number of bars scanned reaches required code length
         if(count_scanned_bar == CODE_LENGTH) {
             // Parse scanned bars
-            char* scanned_char = parse_scanned_bars();
+            char scanned_char = parse_scanned_bars();
             
             // Reset barcode after reading a character
             reset_barcode();
@@ -139,17 +168,19 @@ void read_barcode() {
             ++count_scanned_char;
 
             // Check validity of scanned character
-            bool valid_char = strcmp(scanned_char, ERROR_CHAR) ? true : false;
+            bool valid_char = (scanned_char != ERROR_CHAR) ? true : false;
 
             // Check if scanned character is valid
             if(valid_char) {
+                printf("\nCharacter scanned: %c\n", scanned_char);
+
                 // Check number of characters scanned
                 switch(count_scanned_char){
                     // Check for a delimiter character
                     case 1:
                         // Check if the scanned character matches the delimiter character
-                        if(strcmp(scanned_char, DELIMIT_CHAR)) { 
-                            printf("No starting delimiter character found! Backup car and reset all characters scanned so far..\n");
+                        if(scanned_char != DELIMIT_CHAR) { 
+                            printf("\nNo starting delimiter character found! Backup car and reset all characters scanned so far..\n");
                             // Reset number of characters scanned 
                             count_scanned_char = 0;
                             // TODO: Backup car..
@@ -158,33 +189,37 @@ void read_barcode() {
                     // Check for a valid character
                     case 2:
                         // Check if the scanned character matches the delimiter character
-                        if(strcmp(scanned_char, DELIMIT_CHAR)) { 
-                            printf("Delimiter character found instead of a valid character! Backup car and reset all characters scanned so far..\n");
+                        if(scanned_char == DELIMIT_CHAR) { 
+                            printf("\nDelimiter character found instead of a valid character! Backup car and reset all characters scanned so far..\n");
                             // Reset number of characters scanned 
                             count_scanned_char = 0;
                             // TODO: Backup car..
                         }
                         else {
                             // Update barcode character scanned
-                            strcpy(barcode_char, scanned_char);
-                            // Print for debugging
-                            printf("\n\nBarcode Character (\n%s): %s\n", scanned_code, barcode_char);
-                            // TODO: Transmit scanned code..
+                            barcode_char = scanned_char;
+                            printf("\n\nCHARRR: %c\n", barcode_char);
+
                         }
                         break;
                     case 3:
                         // Check if the scanned character matches the delimiter character
-                        if(strcmp(scanned_char, DELIMIT_CHAR)) { 
-                            printf("No ending delimiter character found! Backup car and reset all characters scanned so far..\n");
+                        if(scanned_char != DELIMIT_CHAR) { 
+                            printf("\nNo ending delimiter character found! Backup car and reset all characters scanned so far..\n");
                             // Reset number of characters scanned 
                             count_scanned_char = 0;
                             // TODO: Backup car..
                         }
                         else {
+                            // Print for debugging
+                            printf("\n\nBarcode Character: %c\n", barcode_char);
+                            // TODO: Transmit scanned code..
+
+                            /* Prepare for next scan */
                             // Reset scan direction
                             reverse_scan = false;
                             // Reset barcode character scanned
-                            strcpy(barcode_char, ""); 
+                            barcode_char = ERROR_CHAR; 
                         }
                         break;
                     default:
@@ -193,7 +228,7 @@ void read_barcode() {
             }
             else { 
                 // Invalid character scanned
-                printf("Invalid barcode character scanned! Backup car and reset all characters scanned so far..");
+                printf("\nInvalid barcode character scanned! Backup car and reset all characters scanned so far..\n");
                 // Reset number of characters scanned 
                 count_scanned_char = 0;
                 // TODO: Backup car..
