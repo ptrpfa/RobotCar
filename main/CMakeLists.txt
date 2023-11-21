@@ -12,6 +12,7 @@ target_include_directories(main PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/../encoder
         ${CMAKE_CURRENT_LIST_DIR}/../wifi
         ${CMAKE_CURRENT_LIST_DIR}/../irline/wallsensor
+        ${CMAKE_CURRENT_LIST_DIR}/../irline/barcode 
         ${CMAKE_CURRENT_LIST_DIR}/../magnetometer
         )
 
@@ -28,6 +29,7 @@ target_link_libraries(main
         motor_lib
         encoder_lib
         wallsensor_lib
+        barcode_lib
         magnetometer_lib
         )
 

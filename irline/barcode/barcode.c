@@ -4,8 +4,21 @@
 #include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
-#include "hardware/adc.h"
 #include "barcode.h"
+
+// Global variable to keep track of barcode scan
+volatile bool barcode_scan = false;
+
+/* Global Variables */
+extern volatile bool barcode_scan;
+bool reverse_scan = false;                    // Boolean to check whether current scan direction is reversed or not
+bool start_scan = false;                      // Boolean to store current scan status, used to ignore initial change in state
+uint64_t last_state_change_time = 0;          // Variable to store the last time where the state changed (microseconds), used for measuring the time it takes to scan each bar
+uint64_t scanned_timings[CODE_LENGTH] = {0};  // Array to store the time it took to scan each bar
+uint16_t count_scanned_bar = 0;               // Count of number of bars scanned
+uint16_t count_scanned_char = 0;              // Count of number of characters scanned, used to get target character between delimiters
+char scanned_code[CODE_LENGTH + 1] = "";      // String to store scanned barcode binary representation
+char barcode_char = ERROR_CHAR;
 
 /* Function Definitions */
 // Function to setup barcode pin to digital
@@ -171,7 +184,7 @@ void read_barcode() {
         ++count_scanned_bar;
 
         // Print for debugging
-        printf("\n\nTime difference [%d]: %lld", count_scanned_bar, scanned_timings[count_scanned_bar - 1]);
+        // printf("\n\nTime difference [%d]: %lld", count_scanned_bar, scanned_timings[count_scanned_bar - 1]);
 
         // Start decoding when number of bars scanned reaches required code length
         if(count_scanned_bar == CODE_LENGTH) {
@@ -267,6 +280,16 @@ void read_barcode() {
 
 // Interrupt callback function
 void interrupt_callback() {
+    // Ensure that the time difference between current time and last button press is not within the debounce delay threshold
+    if((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS) {
+        barcode_scan = true;
+        // Read barcode
+        read_barcode();
+    }
+}
+
+// Interrupt callback function
+void interrupt_callback_test() {
     // Check if button has been pressed
     if(!gpio_get(BTN_PIN)) {
         printf("\nRESET BARCODE!\n\n");
@@ -276,33 +299,46 @@ void interrupt_callback() {
     else {
         // Ensure that the time difference between current time and last button press is not within the debounce delay threshold
         if((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS) {
+            barcode_scan = true;
             // Read barcode
             read_barcode();
         }
     }
 }
 
-// Program entrypoint
-int main() {
+// Function to initialise barcode sensor
+void init_barcode() {
     // Initialise standard I/O
     stdio_init_all();
 
     // Setup barcode pin
     setup_barcode_pin();
 
-    // Enable interrupt on specified pin upon a button press (rising or falling edge)
+    // Enable interrupt on specified pin upon a rising or falling edge
     gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
-    
-    /* TEMPORARY (For Maker Kit button reset)*/
-    // Configure GPIO pin as input, with a pull-up resistor (Active-Low)
-    gpio_init(BTN_PIN);
-    gpio_set_dir(BTN_PIN, GPIO_IN);
-    gpio_set_pulls(BTN_PIN, true, false);
-    gpio_set_irq_enabled_with_callback(BTN_PIN, GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
-
-    // Loop forever
-    while(true) {
-        // Perform no operations indefinitely
-        tight_loop_contents();
-    };
 }
+
+// Program entrypoint
+// int main() {
+//     // Initialise standard I/O
+//     stdio_init_all();
+
+//     // Setup barcode pin
+//     setup_barcode_pin();
+
+//     // Enable interrupt on specified pin upon a button press (rising or falling edge)
+//     gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback_test);
+    
+//     /* TEMPORARY (For Maker Kit button reset)*/
+//     // Configure GPIO pin as input, with a pull-up resistor (Active-Low)
+//     gpio_init(BTN_PIN);
+//     gpio_set_dir(BTN_PIN, GPIO_IN);
+//     gpio_set_pulls(BTN_PIN, true, false);
+//     gpio_set_irq_enabled_with_callback(BTN_PIN, GPIO_IRQ_EDGE_FALL, true, &interrupt_callback_test);
+
+//     // Loop forever
+//     while(true) {
+//         // Perform no operations indefinitely
+//         tight_loop_contents();
+//     };
+// }
