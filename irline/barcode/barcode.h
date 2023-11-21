@@ -3,6 +3,8 @@
 #define TOTAL_CHAR 44                         // Total number of characters encoded by Barcode 39 representation
 #define CODE_LENGTH 9                         // Length of each barcode's binary representation
 #define DELIMIT_CHAR '*'                      // Delimiter used as a start/stop character before actual data reading
+#define DELIMIT_CODE "010010100"              // Binary representation of delimit character
+#define DELIMIT_REVERSED_CODE "001010010"     // Reversed binary representation of delimit character
 #define ERROR_CHAR '#'                        // Error character
 
 // Sensors

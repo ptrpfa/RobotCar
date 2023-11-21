@@ -76,7 +76,7 @@ char parse_scanned_bars() {
     // Initialise array used to store each barcode character
     char array_char[TOTAL_CHAR] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 
                                     'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 
-                                    'Y', 'Z', '_', '.', '$', '/', '+', '%', ' ', '*'};       
+                                    'Y', 'Z', '_', '.', '$', '/', '+', '%', ' '};       
 
     // Initialise array used to store binary representation of each character
     char* array_code[TOTAL_CHAR] = {"000110100", "100100001", "001100001", "101100000", "000110001", "100110000", "001110000", 
@@ -85,7 +85,7 @@ char parse_scanned_bars() {
                                     "001000011", "101000010", "000010011", "100010010", "001010010", "000000111", "100000110", 
                                     "001000110", "000010110", "110000001", "011000001", "111000000", "010010001", "110010000", 
                                     "011010000", "010000101", "110000100", "010101000", "010100010", "010001010", "000101010", 
-                                    "011000100", "010010100"};
+                                    "011000100"};
                                     
     // Initialise array used to store the reversed binary representation of each character
     char* array_reverse_code[TOTAL_CHAR] = {"001011000", "100001001", "100001100", "000001101", "100011000", "000011001", 
@@ -95,30 +95,47 @@ char parse_scanned_bars() {
                                             "010010001", "010010100", "111000000", "011000001", "011000100", "011010000", 
                                             "100000011", "100000110", "000000111", "100010010", "000010011", "000010110", 
                                             "101000010", "001000011", "000101010", "010001010", "010100010", "010101000", 
-                                            "001000110", "001010010"};
+                                            "001000110"};
 
-    // Check scan direction
-    if(!reverse_scan) {
-        // Loop through all possible binary representations for a matching lookup character
-        for(int i = 0; i < TOTAL_CHAR; i++) {
-            if(strcmp(scanned_code, array_code[i]) == 0) {
-                // Update lookup character and immediately break out of loop
-                decoded_char = array_char[i];
-                match = true;
-                break;
-            }
+    // Check if parsing for delimit character
+    if(count_scanned_char == 1 || count_scanned_char == 3) {
+        // Check for a matching delimit character
+        if(strcmp(scanned_code, DELIMIT_CODE) == 0) {
+            // Update decoded character
+            decoded_char = DELIMIT_CHAR;
+            match = true;
+        }
+        else if(strcmp(scanned_code, DELIMIT_REVERSED_CODE) == 0) {
+            // Update decoded character
+            decoded_char = DELIMIT_CHAR;
+            match = true;
+            // Update scan direction
+            reverse_scan = true;
         }
     }
-    // If there are no matches, try reverse lookup
-    if(!match || reverse_scan) {
-        // Loop through all possible reverse binary representations for a matching lookup character
-        for(int i = 0; i < TOTAL_CHAR; i++) {
-            if(strcmp(scanned_code, array_reverse_code[i]) == 0) {
-                // Update lookup character and immediately break out of loop
-                decoded_char = array_char[i];
-                // Update scan direction
-                reverse_scan = true;
-                break;
+    else { // Parsing for character
+        // Check scan direction
+        if(!reverse_scan) {
+            // Loop through all possible binary representations for a matching decoded character
+            for(int i = 0; i < TOTAL_CHAR; i++) {
+                if(strcmp(scanned_code, array_code[i]) == 0) {
+                    // Update decoded character and immediately break out of loop
+                    decoded_char = array_char[i];
+                    match = true;
+                    break;
+                }
+            }
+        }
+        // Reversed scan direction
+        else {
+            // Loop through all possible reverse binary representations for a matching decoded character
+            for(int i = 0; i < TOTAL_CHAR; i++) {
+                if(strcmp(scanned_code, array_reverse_code[i]) == 0) {
+                    // Update decoded character and immediately break out of loop
+                    decoded_char = array_char[i];
+                    match = true;
+                    break;
+                }
             }
         }
     }
@@ -158,14 +175,15 @@ void read_barcode() {
 
         // Start decoding when number of bars scanned reaches required code length
         if(count_scanned_bar == CODE_LENGTH) {
+            // Update number of characters scanned
+            ++count_scanned_char;
+
             // Parse scanned bars
             char scanned_char = parse_scanned_bars();
             
             // Reset barcode after reading a character
             reset_barcode();
 
-            // Update number of characters scanned
-            ++count_scanned_char;
 
             // Check validity of scanned character
             bool valid_char = (scanned_char != ERROR_CHAR) ? true : false;
@@ -188,19 +206,9 @@ void read_barcode() {
                         break;
                     // Check for a valid character
                     case 2:
-                        // Check if the scanned character matches the delimiter character
-                        if(scanned_char == DELIMIT_CHAR) { 
-                            printf("\nDelimiter character found instead of a valid character! Backup car and reset all characters scanned so far..\n");
-                            // Reset number of characters scanned 
-                            count_scanned_char = 0;
-                            // TODO: Backup car..
-                        }
-                        else {
-                            // Update barcode character scanned
-                            barcode_char = scanned_char;
-                            printf("\n\nCHARRR: %c\n", barcode_char);
-
-                        }
+                        // Update barcode character scanned
+                        barcode_char = scanned_char;
+                        printf("\n\nCHARRR: %c\n", barcode_char);
                         break;
                     case 3:
                         // Check if the scanned character matches the delimiter character
@@ -220,6 +228,8 @@ void read_barcode() {
                             reverse_scan = false;
                             // Reset barcode character scanned
                             barcode_char = ERROR_CHAR; 
+                            // Reset number of characters scanned 
+                            count_scanned_char = 0;
                         }
                         break;
                     default:
