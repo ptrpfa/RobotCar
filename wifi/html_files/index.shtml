@@ -95,6 +95,12 @@
           <a onclick="toggleEngine(0)" class="button">Stop Car</a>
           <a href="/index.shtml" class="button">Refresh</a>
         </div>
+
+        <div class="controls">
+          <h2 style="padding-bottom: 1rem; padding-top: 1rem">Barcode Controls:</h2>
+          <a onclick="toggleBarcode(1)" class="button">Reset Barcode</a>
+          <a href="/index.shtml" class="button">Refresh</a>
+        </div>
         <div class="data">
           <h2>SSI Data:</h2>
           <p id="car-status">
@@ -227,6 +233,26 @@
             document.getElementById(
               "led-status"
             ).innerHTML = `Car is switched: ${status ? "ON" : "OFF"}`;
+          })
+          .catch((error) => {
+            console.error(
+              "There has been a problem with your fetch operation:",
+              error
+            );
+          });
+      }
+
+      function toggleBarcode(status) {
+        // Make an AJAX request to the server
+        fetch(`/barcode.cgi?barcode=${status}`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.text();
+          })
+          .then((html) => {
+            console.log("Barcode status changed.");
           })
           .catch((error) => {
             console.error(
