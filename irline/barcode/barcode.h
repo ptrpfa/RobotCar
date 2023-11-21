@@ -10,7 +10,7 @@
 // Sensors
 #define BTN_PIN 20                            // Maker kit button pin
 #define IR_SENSOR_PIN 26                      // IR sensor pin
-#define DEBOUNCE_DELAY_MICROSECONDS 5000      // Debounce delay in microseconds (us)
+#define DEBOUNCE_DELAY_MICROSECONDS 3000      // Debounce delay in microseconds (us)
 
 /* Global Variables */
 bool reverse_scan = false;                    // Boolean to check whether current scan direction is reversed or not

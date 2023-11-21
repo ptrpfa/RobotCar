@@ -171,7 +171,7 @@ void read_barcode() {
         ++count_scanned_bar;
 
         // Print for debugging
-        printf("\n\nTime difference [%d]: %lld", count_scanned_bar, scanned_timings[count_scanned_bar - 1]);
+        // printf("\n\nTime difference [%d]: %lld", count_scanned_bar, scanned_timings[count_scanned_bar - 1]);
 
         // Start decoding when number of bars scanned reaches required code length
         if(count_scanned_bar == CODE_LENGTH) {
@@ -180,18 +180,12 @@ void read_barcode() {
 
             // Parse scanned bars
             char scanned_char = parse_scanned_bars();
-            
-            // Reset barcode after reading a character
-            reset_barcode();
-
 
             // Check validity of scanned character
             bool valid_char = (scanned_char != ERROR_CHAR) ? true : false;
 
             // Check if scanned character is valid
             if(valid_char) {
-                printf("\nCharacter scanned: %c\n", scanned_char);
-
                 // Check number of characters scanned
                 switch(count_scanned_char){
                     // Check for a delimiter character
@@ -199,24 +193,35 @@ void read_barcode() {
                         // Check if the scanned character matches the delimiter character
                         if(scanned_char != DELIMIT_CHAR) { 
                             printf("\nNo starting delimiter character found! Backup car and reset all characters scanned so far..\n");
+                            /* Prepare for next scan */
+                            // Reset scan direction
+                            reverse_scan = false;
+                            // Reset barcode character scanned
+                            barcode_char = ERROR_CHAR; 
                             // Reset number of characters scanned 
                             count_scanned_char = 0;
                             // TODO: Backup car..
+                            // Disable readings..
                         }
                         break;
                     // Check for a valid character
                     case 2:
                         // Update barcode character scanned
                         barcode_char = scanned_char;
-                        printf("\n\nCHARRR: %c\n", barcode_char);
                         break;
                     case 3:
                         // Check if the scanned character matches the delimiter character
                         if(scanned_char != DELIMIT_CHAR) { 
                             printf("\nNo ending delimiter character found! Backup car and reset all characters scanned so far..\n");
+                            /* Prepare for next scan */
+                            // Reset scan direction
+                            reverse_scan = false;
+                            // Reset barcode character scanned
+                            barcode_char = ERROR_CHAR; 
                             // Reset number of characters scanned 
                             count_scanned_char = 0;
                             // TODO: Backup car..
+                            // Disable readings..
                         }
                         else {
                             // Print for debugging
@@ -239,10 +244,19 @@ void read_barcode() {
             else { 
                 // Invalid character scanned
                 printf("\nInvalid barcode character scanned! Backup car and reset all characters scanned so far..\n");
+                /* Prepare for next scan */
+                // Reset scan direction
+                reverse_scan = false;
+                // Reset barcode character scanned
+                barcode_char = ERROR_CHAR; 
                 // Reset number of characters scanned 
                 count_scanned_char = 0;
                 // TODO: Backup car..
+                // Disable readings..
             }
+
+            // Reset barcode after reading a character
+            reset_barcode();
         }
 
     }
