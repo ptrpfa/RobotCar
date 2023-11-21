@@ -1,4 +1,5 @@
 #include "ssi.h"
+#include "barcode.h"
 
 const char *ssi_tags[] = {"volt", "temp", "led", "width", "height", "grid1", "grid2", "grid3", "grid4", "grid5", "b1", "b2", "b3"};
 // char formatted_map[5][192];
@@ -126,7 +127,7 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen)
   break;
   case 10: // b1
   {
-    printed = snprintf(pcInsert, iInsertLen, "A");
+    printed = snprintf(pcInsert, iInsertLen, "%c", barcode_char);
   }
   break;
   case 11: // b2
@@ -135,12 +136,12 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen)
     // Expected input example: "{{x:1,y:1,n:1,s:1,e:0,w:0},{x:2,y:2,n:0,s:1,e:0,w:1},{x:0,y:5,n:0,s:1,e:1,w:1}}"
     
     // printed = snprintf(pcInsert, iInsertLen, "[{'x':2,'y':3,'w':[0,1,1,0],'v':3,'c':'C'},{'x':3,'y':3,'w':[0,1,1,1],'v':1},{'x':4,'y':3,'w':[0,1,0,1],'v':1},{'x':5,'y':3,'w':[1,1,1,0],'v':1}]");
-    printed = snprintf(pcInsert, iInsertLen, "B");
+    printed = snprintf(pcInsert, iInsertLen, "");
   }
   break;
   case 12: // b3
   {
-    printed = snprintf(pcInsert, iInsertLen, "C");
+    printed = snprintf(pcInsert, iInsertLen, "");
   }
   break;
   default:
