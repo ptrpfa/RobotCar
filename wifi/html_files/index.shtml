@@ -14,11 +14,12 @@
       .left-column {
         flex: 2; /* Adjust the width of the left column as needed */
         padding: 10px;
+        margin-right: 3rem;
       }
       .map {
-        flex: 1; /* The map occupies 1/3 of the container width */
+        flex: 3; /* The map occupies 1/3 of the container width */
         border: 1px solid #ccc;
-        padding: 10px;
+        padding: 0% 3rem 1rem 3rem;
         box-sizing: border-box;
       }
       .controls {
@@ -45,6 +46,7 @@
       }
       .grid {
         display: grid;
+        padding: 0% 3rem 1rem 3rem;
       }
 
       .grid-row {
@@ -76,17 +78,19 @@
     </style>
   </head>
   <body>
-    <h1>Welcome To Red Bull Racing 🏎️</h1>
+    <div style="text-align: center">
+      <h1>&#x1F3CE; Welcome To Red Bull Racing &#x1F3CE;</h1>
+    </div>
     <div class="container">
       <div class="left-column">
         <div class="controls">
-          <h2>Led Controls:</h2>
+          <h2 style="padding-bottom: 1rem">Led Controls:</h2>
           <a onclick="toggleLed(1)" class="button">ON LED</a>
           <a onclick="toggleLed(0)" class="button">OFF LED</a>
           <a href="/index.shtml" class="button">Refresh</a>
         </div>
         <div class="controls">
-          <h2>Engine Controls:</h2>
+          <h2 style="padding-bottom: 1rem; padding-top: 1rem">Engine Controls:</h2>
           <a onclick="toggleEngine(1)" class="button">Start Car</a>
           <a onclick="toggleEngine(0)" class="button">Stop Car</a>
           <a href="/index.shtml" class="button">Refresh</a>
@@ -122,10 +126,27 @@
           name="max-height"
           value="<!--#height-->"
         />
-        <div class="grid"></div>
+        <h2>Map&#x1F9C0;&#x1F42D;</h2>
+        <hr>
+        <div id="map-container">
+          <div class="grid"></div>
+          <!-- <p><u>Legend</u></p> -->
+          <!-- <p>B*: Barcode location</p> -->
+          <!-- <p>O: Obstacle location</p> -->
+  
+          <p><u>Barcode Values</u></p>
+          <p>B1: <b id="b1-value"><!--#b1--></b></p>
+          <p>B2: <b id="b2-value"><!--#b2--></b></p>
+          <p>B3: <b id="b3-value"><!--#b3--></b></p>
+        </div>
+        <!-- <div id="no-map" style="text-align:center">
+          <h3>No map data!</h3>
+        </div> -->
+
       </div>
     </div>
     <script>
+      
       document.addEventListener("DOMContentLoaded", function () {
         const max_width = document.getElementById("max-width").value;
         const max_height = document.getElementById("max-height").value;
@@ -133,6 +154,7 @@
         gridContainer.style.gridTemplateColumns = `repeat(${max_width}, 1fr)`;
 
         const total_cells = max_height * max_width;
+        let barcode_counter = 1;
         
         function makegrid(gridmap) {
           let json_grid_data = JSON.parse(gridmap.replace(/'/g, '"'));
@@ -165,7 +187,9 @@
             if (celldata.v === 2) { // Obstacle
               content.innerHTML = "O";
             } else if (celldata.v === 3) { // Barcode
-              content.innerHTML = "B";
+              content.innerHTML = `B${barcode_counter}`;
+              document.getElementById(`b${barcode_counter}-value`).innerHTML = celldata.c;
+              barcode_counter += 1;
             }
   
             cell.appendChild(content);
@@ -174,11 +198,18 @@
           });
         }
         
-        makegrid("<!--#grid1-->");
-        makegrid("<!--#grid2-->");
-        makegrid("<!--#grid3-->");
-        makegrid("<!--#grid4-->");
-        makegrid("<!--#grid5-->");
+        if ("<!--#grid1-->") {
+          // document.getElementById("no-map").style.display='none';
+          // document.getElementById("map-container").style.display='block';
+          makegrid("<!--#grid1-->");
+          makegrid("<!--#grid2-->");
+          makegrid("<!--#grid3-->");
+          makegrid("<!--#grid4-->");
+          makegrid("<!--#grid5-->");
+        } else {
+          // document.getElementById("no-map").style.display='block';
+          // document.getElementById("map-container").style.display='none';
+        }
       });
 
       function toggleLed(status) {

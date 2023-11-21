@@ -1,6 +1,41 @@
 #include "ssi.h"
 
-const char *ssi_tags[] = {"volt", "temp", "led", "width", "height", "grid1", "grid2", "grid3", "grid4", "grid5"};
+const char *ssi_tags[] = {"volt", "temp", "led", "width", "height", "grid1", "grid2", "grid3", "grid4", "grid5", "b1", "b2", "b3"};
+// char formatted_map[5][192];
+
+// void format_maze(){
+//   int counter = 0;
+//   int curr_grid = 0;
+//   int current_pos = 1;
+
+//   formatted_map[counter][0] = '[';
+
+//   for (int x = 0; x < 6; x++) {
+//     for (int y = 0; y < 4; y++) {
+//       formatted_map[counter][current_pos] = '{';
+
+//       current_pos += snprintf(&formatted_map[counter][current_pos], 191 - current_pos, "'x':%d,'y':%d,'w':[%d,%d,%d,%d],'v':%d",
+//                 mazeGrid[x][y].x, mazeGrid[x][y].y,
+//                 mazeGrid[x][y].northWall, mazeGrid[x][y].southWall,
+//                 mazeGrid[x][y].eastWall, mazeGrid[x][y].westWall,
+//                 mazeGrid[x][y].visited);
+//       if (mazeGrid[x][y].visited == 2) {
+//         current_pos += snprintf(&formatted_map[counter][current_pos], 191 - current_pos, ",'c':'%c'", mazeGrid.character);
+//       }
+
+//       formatted_map[counter][current_pos++] = '}';
+
+//       if ((curr_grid + 1) % 5 == 0) {
+//         counter++;
+//         formatted_map[counter][current_pos++] = ']';
+//       } else {
+//         formatted_map[counter][current_pos++] = ',';
+//       }
+
+//       curr_grid++;
+//     }
+//   }
+// }
 
 u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen)
 {
@@ -49,9 +84,8 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen)
     // Handle logic here, or in motor code
     // Expected input example: "{{x:1,y:1,n:1,s:1,e:0,w:0},{x:2,y:2,n:0,s:1,e:0,w:1},{x:0,y:5,n:0,s:1,e:1,w:1}}"
     
-    printed = snprintf(pcInsert, iInsertLen, "[{'x':0,'y':0,'w':[1,0,1,1]},{'x':1,'y':0,'w':[1,0,0,0]},{'x':2,'y':0,'w':[1,1,0,0]},{'x':3,'y':0,'w':[1,0,0,0]},{'x':4,'y':0,'w':[1,1,0,0]}]");
-    // printed = snprintf(pcInsert, iInsertLen, "test");
-  
+    // printed = snprintf(pcInsert, iInsertLen, "[{'x':0,'y':0,'w':[1,0,1,1],'v':1},{'x':1,'y':0,'w':[1,0,0,0],'v':1},{'x':2,'y':0,'w':[1,1,0,0],'v':1},{'x':3,'y':0,'w':[1,0,0,0],'v':1},{'x':4,'y':0,'w':[1,1,0,0],'v':1}]");
+    printed = snprintf(pcInsert, iInsertLen, "");
   }
   break;
   case 6: // grid2
@@ -59,41 +93,54 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen)
     // Handle logic here, or in motor code
     // Expected input example: "{{x:1,y:1,n:1,s:1,e:0,w:0},{x:2,y:2,n:0,s:1,e:0,w:1},{x:0,y:5,n:0,s:1,e:1,w:1}}"
     
-    // {'x':5,'y':0,'n':1,'s':0,'e':1,'w':0}
-    // {'x':5,'y':0,'w':[1,0,1,0]}
-    printed = snprintf(pcInsert, iInsertLen, "[{'x':5,'y':0,'w':[1,0,1,0],'v':1},{'x':0,'y':1,'w':[0,0,0,1],'v':1},{'x':1,'y':1,'w':[0,1,0,0],'v':1},{'x':2,'y':1,'w':[1,0,1,0],'v':2},{'x':3,'y':1,'w':[0,0,1,1],'v':1}]");
-    // printed = snprintf(pcInsert, iInsertLen, "test");
-  
+    // printed = snprintf(pcInsert, iInsertLen, "[{'x':5,'y':0,'w':[1,0,1,0],'v':1},{'x':0,'y':1,'w':[0,0,0,1],'v':1},{'x':1,'y':1,'w':[0,1,0,0],'v':1},{'x':2,'y':1,'w':[1,0,1,0],'v':2},{'x':3,'y':1,'w':[0,0,1,1],'v':1}]");
+    printed = snprintf(pcInsert, iInsertLen, "");
   }
   break;
-    case 7: // grid3
+  case 7: // grid3
   {
     // Handle logic here, or in motor code
     // Expected input example: "{{x:1,y:1,n:1,s:1,e:0,w:0},{x:2,y:2,n:0,s:1,e:0,w:1},{x:0,y:5,n:0,s:1,e:1,w:1}}"
     
-    printed = snprintf(pcInsert, iInsertLen, "[{'x':4,'y':1,'w':[1,1,0,1],'v':1},{'x':5,'y':1,'w':[0,0,0,0],'v':1},{'x':0,'y':2,'w':[0,0,0,0],'v':1},{'x':1,'y':2,'w':[1,1,1,0],'v':1},{'x':2,'y':2,'w':[0,0,1,1],'v':1}]");
-    // printed = snprintf(pcInsert, iInsertLen, "test");
-  
+    // printed = snprintf(pcInsert, iInsertLen, "[{'x':4,'y':1,'w':[1,1,0,1],'v':1},{'x':5,'y':1,'w':[0,0,0,0],'v':1},{'x':0,'y':2,'w':[0,0,0,0],'v':3, 'c':'B'},{'x':1,'y':2,'w':[1,1,1,0],'v':1},{'x':2,'y':2,'w':[0,0,1,1],'v':1}]");
+    printed = snprintf(pcInsert, iInsertLen, "");
   }
   break;
-    case 8: // grid4
+  case 8: // grid4
   {
     // Handle logic here, or in motor code
     // Expected input example: "{{x:1,y:1,n:1,s:1,e:0,w:0},{x:2,y:2,n:0,s:1,e:0,w:1},{x:0,y:5,n:0,s:1,e:1,w:1}}"
     
-    printed = snprintf(pcInsert, iInsertLen, "[{'x':3,'y':2,'w':[0,0,1,1],'v':1},{'x':4,'y':2,'w':[1,0,0,1],'v':1},{'x':5,'y':2,'w':[0,1,1,0],'v':1},{'x':0,'y':3,'w':[0,1,1,1],'v':3},{'x':1,'y':3,'w':[1,1,0,1],'v':1}]");
-    // printed = snprintf(pcInsert, iInsertLen, "test");
-  
+    // printed = snprintf(pcInsert, iInsertLen, "[{'x':3,'y':2,'w':[0,0,1,1],'v':1},{'x':4,'y':2,'w':[1,0,0,1],'v':1},{'x':5,'y':2,'w':[0,1,1,0],'v':1},{'x':0,'y':3,'w':[0,1,1,1],'v':3, 'c':'A'},{'x':1,'y':3,'w':[1,1,0,1],'v':1}]");
+    printed = snprintf(pcInsert, iInsertLen, "");
   }
   break;
-    case 9: // grid5
+  case 9: // grid5
   {
     // Handle logic here, or in motor code
     // Expected input example: "{{x:1,y:1,n:1,s:1,e:0,w:0},{x:2,y:2,n:0,s:1,e:0,w:1},{x:0,y:5,n:0,s:1,e:1,w:1}}"
     
-    printed = snprintf(pcInsert, iInsertLen, "[{'x':2,'y':3,'w':[0,1,1,0],'v':1},{'x':3,'y':3,'w':[0,1,1,1],'v':1},{'x':4,'y':3,'w':[0,1,0,1],'v':1},{'x':5,'y':3,'w':[1,1,1,0],'v':1}]");
-    // printed = snprintf(pcInsert, iInsertLen, "test");
-  
+    // printed = snprintf(pcInsert, iInsertLen, "[{'x':2,'y':3,'w':[0,1,1,0],'v':3,'c':'C'},{'x':3,'y':3,'w':[0,1,1,1],'v':1},{'x':4,'y':3,'w':[0,1,0,1],'v':1},{'x':5,'y':3,'w':[1,1,1,0],'v':1}]");
+    printed = snprintf(pcInsert, iInsertLen, "");
+  }
+  break;
+  case 10: // b1
+  {
+    printed = snprintf(pcInsert, iInsertLen, "A");
+  }
+  break;
+  case 11: // b2
+  {
+    // Handle logic here, or in motor code
+    // Expected input example: "{{x:1,y:1,n:1,s:1,e:0,w:0},{x:2,y:2,n:0,s:1,e:0,w:1},{x:0,y:5,n:0,s:1,e:1,w:1}}"
+    
+    // printed = snprintf(pcInsert, iInsertLen, "[{'x':2,'y':3,'w':[0,1,1,0],'v':3,'c':'C'},{'x':3,'y':3,'w':[0,1,1,1],'v':1},{'x':4,'y':3,'w':[0,1,0,1],'v':1},{'x':5,'y':3,'w':[1,1,1,0],'v':1}]");
+    printed = snprintf(pcInsert, iInsertLen, "B");
+  }
+  break;
+  case 12: // b3
+  {
+    printed = snprintf(pcInsert, iInsertLen, "C");
   }
   break;
   default:
@@ -111,5 +158,6 @@ void ssi_init()
   adc_set_temp_sensor_enabled(true);
   adc_select_input(4);
 
+  // format_maze();
   http_set_ssi_handler(ssi_handler, ssi_tags, LWIP_ARRAYSIZE(ssi_tags));
 }
