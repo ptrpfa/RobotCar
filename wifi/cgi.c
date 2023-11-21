@@ -1,4 +1,5 @@
 #include "cgi.h"
+#include "barcode.h"
 
 // CGI handler which is run when a request for /led.cgi is detected
 const char *cgi_led_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])

@@ -184,7 +184,7 @@ void read_barcode() {
         ++count_scanned_bar;
 
         // Print for debugging
-        // printf("\n\nTime difference [%d]: %lld", count_scanned_bar, scanned_timings[count_scanned_bar - 1]);
+        printf("\n\nTime difference [%d]: %lld", count_scanned_bar, scanned_timings[count_scanned_bar - 1]);
 
         // Start decoding when number of bars scanned reaches required code length
         if(count_scanned_bar == CODE_LENGTH) {
@@ -309,11 +309,13 @@ void interrupt_callback_test() {
 // Function to initialise barcode sensor
 void init_barcode() {
     // Initialise standard I/O
-    stdio_init_all();
+    // stdio_init_all();
 
+    printf("before setting pin\n");
     // Setup barcode pin
     setup_barcode_pin();
 
+    printf("before setting interrupt\n");
     // Enable interrupt on specified pin upon a rising or falling edge
     gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
 }

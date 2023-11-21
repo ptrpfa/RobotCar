@@ -34,8 +34,8 @@ struct Cell {
 struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
 
 // Global variables
-const char WIFI_SSID[] = "dinie";           // Wifi credentials
-const char WIFI_PASSWORD[] = "testest1";    // Wifi credentials
+const char WIFI_SSID[] = "JR";           // Wifi credentials
+const char WIFI_PASSWORD[] = "hello123";    // Wifi credentials
 int position = 0;                           // 0 - S, 1 - W, 2 - N, 3 - E
 int startCar = 0;                           // From CGI to toggle car start / stop
 bool oneGrid = false;
@@ -244,7 +244,7 @@ int main() {
 
             /* Barcode scan */
             // Move straight for 2 seconds
-            moveMotor(1900);
+            moveMotor(1300);
             // sleep_ms(2000);
             // stopMotor();
 
