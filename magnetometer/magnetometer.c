@@ -13,7 +13,7 @@
 #define I2C_INST &i2c1_inst
 
 void init_i2c_default() {
-   i2c_init(i2c_default, I2C_BAUD * 1000);
+   i2c_init(I2C_INST, I2C_BAUD * 1000);
    gpio_set_function(PICO_I2C_SDA_PIN, GPIO_FUNC_I2C);
    gpio_set_function(PICO_I2C_SCL_PIN, GPIO_FUNC_I2C);
    gpio_pull_up(PICO_I2C_SDA_PIN);
@@ -62,8 +62,7 @@ void read_magnetometer(mag_t *mag) {
    uint8_t reg = MAG_REG;
 
    i2c_write_blocking(
-      // i2c_default,
-      &i2c1_inst,
+      I2C_INST,
       INTERFACE_A,
       &reg,
       1,
@@ -97,6 +96,7 @@ int32_t get_angle(mag_t *mag) {
    return angle;
 }
 
+/*
 int main() {
    
    // init all
@@ -108,12 +108,14 @@ int main() {
 
    // read values
    while (true) {
-      read_magnetometer(&mag);            // read x,y,z value
-      int32_t angle = get_angle(&mag);    // calculate and return angle
-      printf("Angle: %d degrees", angle); // return compass angle in degrees
-      // printf("\nMag. \nX = %4d, \nY = %4d, \nZ = %4d \n", mag.x,mag.y,mag.z); // for reference only
+      read_magnetometer(&mag);
+      int32_t angle = get_angle(&mag); 
+      printf("\nMag. \nX = %4d, \nY = %4d, \nZ = %4d \n",
+            mag.x,mag.y,mag.z);
+      printf("Angle: %d degrees", angle);
       sleep_ms(REFRESH_PERIOD);
    }
 
    return 0;
 }
+*/

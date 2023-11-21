@@ -1,3 +1,6 @@
+#ifndef magnetometer_h
+#define magnetometer_h
+
 #include <stdint.h>
 
 #define INTERFACE_A 0x1E // Magnetometer slave address
@@ -22,3 +25,5 @@ void init_i2c_default();
 void magnetometer_init();
 void read_magnetometer(mag_t *mag);
 int32_t get_angle(mag_t *mag);
+
+#endif
