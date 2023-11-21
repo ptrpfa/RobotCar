@@ -171,7 +171,7 @@ void read_barcode() {
         ++count_scanned_bar;
 
         // Print for debugging
-        // printf("\n\nTime difference [%d]: %lld", count_scanned_bar, scanned_timings[count_scanned_bar - 1]);
+        printf("\n\nTime difference [%d]: %lld", count_scanned_bar, scanned_timings[count_scanned_bar - 1]);
 
         // Start decoding when number of bars scanned reaches required code length
         if(count_scanned_bar == CODE_LENGTH) {
