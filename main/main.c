@@ -6,6 +6,7 @@
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
 #include "hardware/adc.h"
+#include "magnetometer.h"
 #include "ultrasonic.h"
 #include "wallsensor.h"
 #include "encoder.h"
@@ -25,6 +26,8 @@ struct Cell {
     bool southWall;
     bool eastWall;
     bool westWall;
+    int wall[4];
+    int visited; // 0 - unvisited, 1 - visited, 2 - obstacle, 3 - barcode
 };
 
 struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
@@ -62,12 +65,15 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
     if (start.x == end.x && start.y == end.y) {
         return;
     }
+    sleep_ms(2000);
    	
 	// Reposition car to face S
    	if (position != 0) {
 		for(int i = position; i != 0; i--) {
 			turnMotor(0);
-			sleep_ms(1000);
+            sleep_ms(525);
+            stopMotor();
+            sleep_ms(2000);
 		}
 
 		position = 0;
@@ -86,14 +92,11 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
         if (isValid(newX, newY)) {
             wallDetected = false;
             oneGrid = false;
-
-            // Kickstart full duty cycle then run at 38% duty cycle
-            // moveMotor(3126);       
+            bool action = false;      
 
             time_t startTime, currentTime;
             double elapsedTime = 0;
             startTime = time(NULL);
-            bool action = false;
 
             // Keep moving until a wall is detected or 1 grid space has past
             while (!action) {
@@ -101,10 +104,9 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
                 elapsedTime = difftime(currentTime, startTime);
 
                 // If past 1 sec without wall detected means successfully moved 1 grid
-                if (elapsedTime >= 1.0) {
+                if (elapsedTime >= 0.85) {
                     // Stop motor after moving 1 grid
                     stopMotor();
-                    sleep_ms(2000);
 
                     // Recursively explore the next cell
                     firstPathAlgo(mazeGrid, (struct Cell){newX, newY}, end);
@@ -118,9 +120,11 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
                     sleep_ms(2000);
 
                     // Turn to the right to check next cell
+                    moveMotor(1900);
                     turnMotor(1);
-                    sleep_ms(525);
+                    sleep_ms(502);
                     stopMotor();
+                    sleep_ms(2000);
 
                     // Identify the direction tried to move and mark cell wall as blocked
                     if (i == 0) {       // Tried to moved south
@@ -151,20 +155,24 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
         // New position is not valid or has been explored
         else {
             // Turn to the right
+            moveMotor(1900);
             turnMotor(1);
-            sleep_ms(525);
+            sleep_ms(502);
             stopMotor();
             position += 1;
         }
     }
 }
 
-int main() {
+// Function to init all sensors and motors
+void initAll () {
     // Initialise standard I/O
     stdio_init_all();
+    sleep_ms(1000);
 
     cyw43_arch_init();
     cyw43_arch_enable_sta_mode();
+    sleep_ms(1000);
 
     // Loop until connected to WiFI network
     while(cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000) != 0){
@@ -175,39 +183,54 @@ int main() {
 
     // Initialise web server
     httpd_init();
-    printf("Http server initialised\n");
+    printf("1/8 - Http server initialised\n");
+    sleep_ms(1000);
 
     // Initialise SSI and CGI handler
     ssi_init(); 
     cgi_init();
-    printf("SSI and CGI Handler initialised\n");
+    printf("2/8 - SSI and CGI Handler initialised\n");
+    sleep_ms(1000);
 
     // Initialise motor pins and PWM
     initMotorSetup();
     initMotorPWM();
-    printf("Motor pins and PWM initialised\n");
+    printf("3/8 - Motor pins and PWM initialised\n");
+    sleep_ms(1000);
 
     // Initialise encoder pins and setup timer to generate interrupts every second to update speed and distance
     initEncoderSetup();
-    printf("Wheel encoder pins initialised\n");
+    printf("4/8 - Wheel encoder pins initialised\n");
+    sleep_ms(1000);
 
     // Initialise ultrasonic sensor
     setupUltrasonicPins();
     kalman_state *state = kalman_init(1, 100, 0, 0);
+    printf("5/8 - Ultrasonic pins initialised\n");
     sleep_ms(1000);
-    printf("Ultrasonic pins initialised\n");
 
     // Initialise wall sensors
     init_wallsensors();
-    printf("Wall sensor pins initialised\n");
+    printf("6/8 - Wall sensor pins initialised\n");
+    sleep_ms(1000);
+
+    init_i2c_default();
+    magnetometer_init();
+    printf("7/8 - Magnetometer pins initialised\n");
+    sleep_ms(1000);
 
     initializeMazeGrid();
-    printf("Maze grids initialised\n");
+    printf("8/8 - Maze grids initialised\n");
+}
+
+int main() {
+    initAll();
 
     // Get speed and distance every second
     // struct repeating_timer timer;
     // add_repeating_timer_ms(1000, encoderCallback, NULL, &timer);
     // double cm;
+    mag_t mag;
 
     while (1) {
         // If car is set to start running from web server
@@ -217,7 +240,64 @@ int main() {
             struct Cell end = {MAZE_WIDTH - 2, MAZE_HEIGHT - 1, false, false, false, false};
 
             // Call pathfinding algorithm
-            firstPathAlgo(mazeGrid, start, end);
+            // firstPathAlgo(mazeGrid, start, end);
+
+            // Move till touches a wall then stop for 2 seconds
+            wallDetected = false;     
+            while (!wallDetected){
+                moveMotor(1900);
+            }
+            stopMotor();
+            sleep_ms(2000);       
+
+            // Get current angle
+            read_magnetometer(&mag);
+            int32_t initialAngle = get_angle(&mag); 
+
+            // Turn right then stop for 2 seconds
+            moveMotor(1900);
+            turnMotor(1);
+            sleep_ms(502);
+            stopMotor();
+
+            // Get new angle and calculate difference
+            read_magnetometer(&mag);
+            int32_t newAngle = get_angle(&mag); 
+            int32_t angleTurned = newAngle - initialAngle;
+            printf("\nAngle turned: %d", angleTurned);
+            sleep_ms(2000);       
+
+            // Move till touches a wall then stop for 2 seconds
+            wallDetected = false;     
+            while (!wallDetected){
+                moveMotor(1900);
+            }
+            stopMotor();
+            sleep_ms(2000); 
+
+            // Get current angle
+            read_magnetometer(&mag);
+            initialAngle = get_angle(&mag); 
+
+            // Turn left then stop for 2 seconds
+            moveMotor(1900);
+            turnMotor(0);
+            sleep_ms(502);
+            stopMotor();
+
+            // Get new angle and calculate difference
+            read_magnetometer(&mag);
+            newAngle = get_angle(&mag); 
+            angleTurned = newAngle - initialAngle;
+            printf("\nAngle turned: %d", angleTurned);
+            sleep_ms(2000);   
+
+            // Move straight for 2 seconds
+            moveMotor(1900);
+            sleep_ms(2000);
+            stopMotor();
+
+            sleep_ms(10000);
 
             /*
             // Get distance from ultrasonic sensor
@@ -242,7 +322,7 @@ int main() {
             sleep_ms(250);
             */
         }
-        // Car is set to stop
+        // If car is set to stop
         else {
             stopMotor();
         }

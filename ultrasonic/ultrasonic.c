@@ -62,8 +62,6 @@ void setupUltrasonicPins()
     gpio_set_dir(TRIGPIN, GPIO_OUT);
     gpio_set_dir(ECHOPIN, GPIO_IN);
     gpio_set_irq_enabled_with_callback(ECHOPIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &get_echo_pulse);
-
-    printf("Ultrasonic pins set up successfully\n");
 }
 
 uint64_t getPulse()
@@ -101,7 +99,7 @@ double getCm(kalman_state *state)
     return state->x;
 }
 
-
+/*
 int main()
 {
     // Driver code to run ultrasonic sensor
@@ -121,3 +119,4 @@ int main()
         sleep_ms(500);
     }
 }
+*/
