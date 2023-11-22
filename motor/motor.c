@@ -204,7 +204,6 @@ void update_motor_speed() {
 
 }
 
-//this is testing commit
 /*
 int main() {
     stdio_init_all();
