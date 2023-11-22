@@ -30,6 +30,7 @@ struct Cell {
     int visited; // 0 - unvisited, 1 - visited, 2 - obstacle, 3 - barcode
 };
 
+
 struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
 
 // Global variables
@@ -202,18 +203,17 @@ void initAll () {
     initEncoderSetup();
     printf("4/8 - Wheel encoder pins initialised\n");
     sleep_ms(1000);
-
-    // Initialise ultrasonic sensor
-    setupUltrasonicPins();
-    kalman_state *state = kalman_init(1, 100, 0, 0);
-    printf("5/8 - Ultrasonic pins initialised\n");
-    sleep_ms(1000);
-
+    
     // Initialise wall sensors
     init_wallsensors();
-    printf("6/8 - Wall sensor pins initialised\n");
+    printf("5/8 - Wall sensor pins initialised\n");
     sleep_ms(1000);
-
+    
+    // Initialise ultrasonic sensor
+    setupUltrasonicPins();
+    printf("6/8 - Ultrasonic pins initialised\n");
+    sleep_ms(2000);
+    
     init_i2c_default();
     magnetometer_init();
     printf("7/8 - Magnetometer pins initialised\n");
@@ -223,14 +223,43 @@ void initAll () {
     printf("8/8 - Maze grids initialised\n");
 }
 
+// Function that is invoked upon a change in right IR sensor's input
+void callbacks(uint gpio, uint32_t events) {
+    if(gpio == L_ENCODER_OUT) {
+        encoderPulse(L_ENCODER_OUT);
+    } 
+    if(gpio == R_ENCODER_OUT) {
+        encoderPulse(R_ENCODER_OUT);
+    } 
+    if(gpio == ECHOPIN) {
+        get_echo_pulse(ECHOPIN, events);
+    } 
+    // Check if left IR pin's state is high
+    if(gpio == LEFT_IR_PIN) {
+        wallDetected = true; 
+    } 
+    // Check if right IR pin's state is high
+    if(gpio == RIGHT_IR_PIN) {
+        wallDetected = true;
+    } 
+}
+
 int main() {
+    // Init all required
     initAll();
 
     // Get speed and distance every second
     // struct repeating_timer timer;
     // add_repeating_timer_ms(1000, encoderCallback, NULL, &timer);
-    // double cm;
+    kalman_state *state = kalman_init(1, 100, 0, 0);
+    double cm;
     mag_t mag;
+
+    gpio_set_irq_enabled_with_callback(L_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(R_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(ECHOPIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(LEFT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(RIGHT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
 
     while (1) {
         // If car is set to start running from web server
@@ -241,7 +270,7 @@ int main() {
 
             // Call pathfinding algorithm
             // firstPathAlgo(mazeGrid, start, end);
-
+            
             // Move till touches a wall then stop for 2 seconds
             wallDetected = false;     
             while (!wallDetected){
@@ -257,14 +286,14 @@ int main() {
             // Turn right then stop for 2 seconds
             moveMotor(1900);
             turnMotor(1);
-            sleep_ms(502);
+            sleep_ms(500);
             stopMotor();
 
             // Get new angle and calculate difference
             read_magnetometer(&mag);
             int32_t newAngle = get_angle(&mag); 
             int32_t angleTurned = newAngle - initialAngle;
-            printf("\nAngle turned: %d", angleTurned);
+            // printf("Angle turned: %d\n", angleTurned);
             sleep_ms(2000);       
 
             // Move till touches a wall then stop for 2 seconds
@@ -282,45 +311,38 @@ int main() {
             // Turn left then stop for 2 seconds
             moveMotor(1900);
             turnMotor(0);
-            sleep_ms(502);
+            sleep_ms(500);
             stopMotor();
 
             // Get new angle and calculate difference
             read_magnetometer(&mag);
             newAngle = get_angle(&mag); 
             angleTurned = newAngle - initialAngle;
-            printf("\nAngle turned: %d", angleTurned);
+            printf("Angle turned: %d\n", angleTurned);
             sleep_ms(2000);   
-
-            // Move straight for 2 seconds
-            moveMotor(1900);
-            sleep_ms(2000);
-            stopMotor();
-
+            
             sleep_ms(10000);
 
-            /*
-            // Get distance from ultrasonic sensor
-            for (int i = 0; i < 10; i++) {
-                cm = getCm(state);
-            }
-            printf("Distance: %.2lf cm\n", cm);
+            bool obstacle = false;
+            while (!obstacle) {
+                // Get distance from ultrasonic sensor
+                for (int i = 0; i < 10; i++) {
+                    cm = getCm(state);
+                }
+                printf("Distance: %.2lf\n", cm);
+                // Move straight
+                moveMotor(1600);
 
-            // If there is an obstacle too close, stop motor and turn right
-            if (cm < 22) {            
-                stopMotor();
-                sleep_ms(500);
-                turnMotor(1);
-            } 
-            else {
-                // Run at half duty cycle
-                moveMotor(1563);
-                // Run at 32% duty cycle
-                moveMotor(1000);
-                sleep_ms(10000);
-            }
-            sleep_ms(250);
-            */
+                // If there is an obstacle too close, stop motor and u-turn right
+                if (cm < 5) {            
+                    stopMotor();
+                    sleep_ms(2000);
+                    turnMotor(1);
+                    sleep_ms(1200);
+                    stopMotor();
+                    obstacle = true;
+                } 
+            }                                
         }
         // If car is set to stop
         else {
