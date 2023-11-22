@@ -15,8 +15,8 @@ extern volatile float actual_speed_R;
 
 // PID parameters
 float Kp = 2.0; 
-float Ki = 0.2; 
-float Kd = 0.02;
+float Ki = 2.0; 
+float Kd = 0.0;
 
 // PID control variables
 float integral_L = 0.0;
@@ -82,10 +82,11 @@ void initMotorPWM() {
 }
 
 // Function to move forward
-void moveMotor(float pwmL , float pwmR) {
-    printf("UPDATING MOTOR : LEFT - %f, RIGHT - %f\n", pwmL, pwmR);
-
+void moveMotor(float new_pwmL , float new_pwmR) {
+    printf("UPDATING MOTOR : LEFT - %f, RIGHT - %f\n", new_pwmL, new_pwmR);
     
+    stopMotor();
+    sleep_ms(50);
     // Set both motors to output high for desired PWM
     // Get PWM slice and channel for ENA and ENB
 	uint sliceLeft = pwm_gpio_to_slice_num(L_MOTOR_ENA);
@@ -101,11 +102,10 @@ void moveMotor(float pwmL , float pwmR) {
 	pwm_set_clkdiv(sliceLeft, 125);
 	pwm_set_clkdiv(sliceRight, 125);
 
-    pwm_set_chan_level(pwm_gpio_to_slice_num(L_MOTOR_ENA), pwm_gpio_to_channel(L_MOTOR_ENA), pwmL);
-    // sleep_ms(50);
-    pwm_set_chan_level(pwm_gpio_to_slice_num(R_MOTOR_ENB), pwm_gpio_to_channel(R_MOTOR_ENB), pwmR);
 
-    // printf("3 : LEFT - %f, RIGHT - %f\n", pwmL, pwmR);
+    pwm_set_chan_level(pwm_gpio_to_slice_num(L_MOTOR_ENA), pwm_gpio_to_channel(L_MOTOR_ENA), new_pwmL);
+    // sleep_ms(50);
+    pwm_set_chan_level(pwm_gpio_to_slice_num(R_MOTOR_ENB), pwm_gpio_to_channel(R_MOTOR_ENB), new_pwmR);
 
 
     // Turn on both motors

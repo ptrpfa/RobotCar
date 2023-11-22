@@ -23,7 +23,7 @@ extern volatile float actual_speed_R;
 
 // Functions for encoders
 void getSpeedAndDistance(int encoder, uint32_t pulseCount, double *totalDistance);
-void encoderPulse(uint gpio, uint32_t events);
+void encoderPulse(uint gpio);
 bool encoderCallback();
 void initEncoderSetup();
 

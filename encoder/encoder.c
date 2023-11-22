@@ -48,7 +48,7 @@ void getSpeedAndDistance(int encoder, uint32_t pulseCount, double *totalDistance
 }
 
 // Function to count each encoder's pulse
-void encoderPulse(uint gpio, uint32_t events) {
+void encoderPulse(uint gpio) {
     // L encoder interrupted
     if (gpio == L_ENCODER_OUT) {
         pulseCountL++;
@@ -84,7 +84,7 @@ void initEncoderSetup() {
 
     // Set GPIO settings for L encoder
     gpio_pull_up(L_ENCODER_OUT);
-    gpio_set_irq_enabled_with_callback(L_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &encoderPulse);
+    // gpio_set_irq_enabled_with_callback(L_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &encoderPulse);
 
     // Initialize GPIO pins for R encoder
     gpio_init(R_ENCODER_POW);
@@ -96,7 +96,7 @@ void initEncoderSetup() {
 
     // Set GPIO settings for R encoder
     gpio_pull_up(R_ENCODER_OUT);
-    gpio_set_irq_enabled_with_callback(R_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &encoderPulse);
+    // gpio_set_irq_enabled_with_callback(R_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &encoderPulse);
 
     // Enable the POW pins
     gpio_put(L_ENCODER_POW, 1);

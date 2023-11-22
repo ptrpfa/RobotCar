@@ -76,17 +76,17 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
             sleep_ms(2000);
 		}
 
-// 		position = 0;
-//    	}
+        position = 0;
+    }
 
-//     // Define the possible moves (S, W, N, E)
-//     int dx[] = {0, -1, 0, 1};
-//     int dy[] = {1, 0, -1, 0};
+    // Define the possible moves (S, W, N, E)
+    int dx[] = {0, -1, 0, 1};
+    int dy[] = {1, 0, -1, 0};
 
-//     // Try all possible moves
-//     for (int i = 0; i < 4; i++) {
-//         int newX = start.x + dx[i];
-//         int newY = start.y + dy[i];
+    // Try all possible moves
+    for (int i = 0; i < 4; i++) {
+        int newX = start.x + dx[i];
+        int newY = start.y + dy[i];
 
         // Check if the new position is valid
         if (isValid(newX, newY)) {
@@ -97,7 +97,6 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
             time_t startTime, currentTime;
             double elapsedTime = 0;
             startTime = time(NULL);
-            bool action = false;
 
             // Keep moving until a wall is detected or 1 grid space has past
             while (!action) {
@@ -113,16 +112,16 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
                     // Recursively explore the next cell
                     firstPathAlgo(mazeGrid, (struct Cell){newX, newY}, end);
 
-//                     // To break loop once returned
-//                     action = true;
-//                 } 
-//                 else if (wallDetected) {
-//                     // Stop motor once wall detected
-//                     stopMotor();
-//                     sleep_ms(2000);
+                    // To break loop once returned
+                    action = true;
+                } 
+                else if (wallDetected) {
+                    // Stop motor once wall detected
+                    stopMotor();
+                    sleep_ms(2000);
 
                     // Turn to the right to check next cell
-                    moveMotor(1900);
+                    moveMotor(pwmL,pwmR);
                     turnMotor(1);
                     sleep_ms(502);
                     stopMotor();
@@ -141,58 +140,33 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
                         mazeGrid[start.x][start.y].eastWall = true;
                     }
 
-//                     // Set position to know how many turn rights were taken
-//                     position += 1;
+                    // Set position to know how many turn rights were taken
+                    position += 1;
 
-//                     // To break loop
-//                     action = true;
-//                 }
-//                 // Else, not 1 sec yet and no wall detected, continue moving
-//                 else {
-//                     moveMotor(1900);
-//                 }
-//             }
-//         }   
-//         // New position is not valid or has been explored
-//         else {
-//             // Turn to the right
-//             turnMotor(1);
-//             sleep_ms(525);
-//             stopMotor();
-//             position += 1;
-//         }
-//     }
-// }
-
-bool pid_update_callback(struct repeating_timer *t) {
-    encoderCallback();
-    update_motor_speed();
-    return true; 
-}
-
-bool motorStarted = false;
-
-
-int main() {
                     // To break loop
                     action = true;
                 }
                 // Else, not 1 sec yet and no wall detected, continue moving
                 else {
-                    moveMotor(1900);
+                    moveMotor(pwmL,pwmR);
                 }
             }
         }   
         // New position is not valid or has been explored
         else {
             // Turn to the right
-            moveMotor(1900);
             turnMotor(1);
-            sleep_ms(502);
+            sleep_ms(525);
             stopMotor();
             position += 1;
         }
     }
+}
+
+bool pid_update_callback(struct repeating_timer *t) {
+    encoderCallback();
+    update_motor_speed();
+    return true; 
 }
 
 // Function to init all sensors and motors
@@ -261,29 +235,7 @@ void initAll () {
     sleep_ms(1000);
 
     initializeMazeGrid();
-    
     printf("9/9 - Maze grids initialised\n");
-}
-
-// Function that is invoked upon a change in right IR sensor's input
-void callbacks(uint gpio, uint32_t events) {
-    if(gpio == L_ENCODER_OUT) {
-        encoderPulse(L_ENCODER_OUT);
-    } 
-    if(gpio == R_ENCODER_OUT) {
-        encoderPulse(R_ENCODER_OUT);
-    } 
-    if(gpio == ECHOPIN) {
-        get_echo_pulse(ECHOPIN, events);
-    } 
-    // Check if left IR pin's state is high
-    if(gpio == LEFT_IR_PIN) {
-        wallDetected = true; 
-    } 
-    // Check if right IR pin's state is high
-    if(gpio == RIGHT_IR_PIN) {
-        wallDetected = true;
-    } 
 }
 
 // Function that is invoked upon a change in right IR sensor's input
@@ -324,130 +276,22 @@ int main() {
     gpio_set_irq_enabled_with_callback(LEFT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
     gpio_set_irq_enabled_with_callback(RIGHT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
 
-    // struct repeating_timer pid_timer;
-    // add_repeating_timer_ms(1000,pid_update_callback,NULL,&pid_timer);
-    
-    while (1) {
+    struct repeating_timer pid_timer;
+    add_repeating_timer_ms(1000,pid_update_callback,NULL,&pid_timer);
+
+     while (1) {
         // If car is set to start running from web server
         if (startCar == 1) {
-            // Set the start cell and end cell
-            struct Cell start = {0, 1, false, false, false, false};
-            struct Cell end = {MAZE_WIDTH - 2, MAZE_HEIGHT - 1, false, false, false, false};
-
-            // Call pathfinding algorithm
-            // firstPathAlgo(mazeGrid, start, end);
-            
-            // Move till touches a wall then stop for 2 seconds
-            wallDetected = false;     
-            while (!wallDetected){
-                moveMotor(1900);
-            }
-            stopMotor();
-            sleep_ms(2000);       
-
-            // Get current angle
-            read_magnetometer(&mag);
-            int32_t initialAngle = get_angle(&mag); 
-
-            // Turn right then stop for 2 seconds
-            moveMotor(1900);
-            turnMotor(1);
-            sleep_ms(500);
-            stopMotor();
-
-            // Get new angle and calculate difference
-            read_magnetometer(&mag);
-            int32_t newAngle = get_angle(&mag); 
-            int32_t angleTurned = newAngle - initialAngle;
-            // printf("Angle turned: %d\n", angleTurned);
-            sleep_ms(2000);       
-
-            // Move till touches a wall then stop for 2 seconds
-            wallDetected = false;     
-            while (!wallDetected){
-                moveMotor(1900);
-            }
-            stopMotor();
-            sleep_ms(2000); 
-
-            // Get current angle
-            read_magnetometer(&mag);
-            initialAngle = get_angle(&mag); 
-
-            // Turn left then stop for 2 seconds
-            moveMotor(1900);
-            turnMotor(0);
-            sleep_ms(500);
-            stopMotor();
-
-            // Get new angle and calculate difference
-            read_magnetometer(&mag);
-            newAngle = get_angle(&mag); 
-            angleTurned = newAngle - initialAngle;
-            printf("Angle turned: %d\n", angleTurned);
-            sleep_ms(2000);   
-            
-            sleep_ms(10000);
-
-            bool obstacle = false;
-            while (!obstacle) {
-                // Get distance from ultrasonic sensor
-                for (int i = 0; i < 10; i++) {
-                    cm = getCm(state);
-                }
-                printf("Distance: %.2lf\n", cm);
-                // Move straight
-                moveMotor(1600);
-
-                // If there is an obstacle too close, stop motor and u-turn right
-                if (cm < 5) {            
-                    stopMotor();
-                    sleep_ms(2000);
-                    turnMotor(1);
-                    sleep_ms(1200);
-                    stopMotor();
-                    obstacle = true;
-                } 
-            }                                
+            // moveMotor(1900,1810);
+            printf("PWML IN MAIN: LEFT: %f, RIGHT: %f\n",pwmL,pwmR);
+            moveMotor(pwmL,pwmR);
+            sleep_ms(1500);
         }
-        // If car is set to stop
+        // Car is set to stop
         else {
             stopMotor();
         }
-    }
-    //     while (1) {
-    //     // If car is set to start running from web server
-    //     if (startCar == 1 && !motorStarted) {
-    //         moveMotor(pwmL, pwmR); // Call moveMotor only once
-    //         motorStarted = true; // Set the flag to true after starting the motor
-    //     }
-    //     // Car is set to stop
-    //     else if (startCar == 0 && motorStarted) {
-    //         stopMotor(); 
-    //         motorStarted = false; 
-    //     }
-    //     sleep_ms(50);
-    // }
-
-    // while (1) {
-    //         // If car is set to start running from web server
-    //         if (startCar == 1) {
-    //             if (!motorStarted) {
-    //                 moveMotor(pwmL, pwmR);
-    //                 motorStarted = true; // Set the flag to true after starting the motor
-    //             }
-    //             // Other code to run when car is started...
-    //         }
-    //         // Car is set to stop
-    //         else {
-    //             if (motorStarted) {
-    //                 stopMotor();
-    //                 motorStarted = false; // Reset the flag when the motor stops
-    //             }
-    //         }
-            
-    //         sleep_ms(10); // Sleep for a short duration to prevent a busy loop
-    //     }
+     }
     return 0;
 }
 
