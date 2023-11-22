@@ -9,6 +9,7 @@
 #include "magnetometer.h"
 #include "ultrasonic.h"
 #include "wallsensor.h"
+#include "barcode.h"
 #include "encoder.h"
 #include "motor.h"
 #include "ssi.h"
@@ -34,8 +35,8 @@ struct Cell {
 struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
 
 // Global variables
-const char WIFI_SSID[] = "dinie";           // Wifi credentials
-const char WIFI_PASSWORD[] = "testest1";    // Wifi credentials
+const char WIFI_SSID[] = "JR";           // Wifi credentials
+const char WIFI_PASSWORD[] = "hello123";    // Wifi credentials
 int position = 0;                           // 0 - S, 1 - W, 2 - N, 3 - E
 int startCar = 0;                           // From CGI to toggle car start / stop
 bool oneGrid = false;
@@ -184,29 +185,40 @@ void initAll () {
 
     // Initialise web server
     httpd_init();
-    printf("1/8 - Http server initialised\n");
+    printf("1/9 - Http server initialised\n");
     sleep_ms(1000);
 
     // Initialise SSI and CGI handler
     ssi_init(); 
     cgi_init();
-    printf("2/8 - SSI and CGI Handler initialised\n");
+    printf("2/9 - SSI and CGI Handler initialised\n");
     sleep_ms(1000);
 
     // Initialise motor pins and PWM
     initMotorSetup();
     initMotorPWM();
-    printf("3/8 - Motor pins and PWM initialised\n");
+    printf("3/9 - Motor pins and PWM initialised\n");
     sleep_ms(1000);
 
     // Initialise encoder pins and setup timer to generate interrupts every second to update speed and distance
     initEncoderSetup();
-    printf("4/8 - Wheel encoder pins initialised\n");
+    printf("4/9 - Wheel encoder pins initialised\n");
     sleep_ms(1000);
-    
+
+    // Initialise ultrasonic sensor
+    setupUltrasonicPins();
+    kalman_state *state = kalman_init(1, 100, 0, 0);
+    printf("5/9 - Ultrasonic pins initialised\n");
+    sleep_ms(1000);
+
     // Initialise wall sensors
     init_wallsensors();
-    printf("5/8 - Wall sensor pins initialised\n");
+    printf("6/9 - Wall sensor pins initialised\n");
+    sleep_ms(1000);
+
+    // Initialise barcode sensor pin
+    init_barcode();
+    printf("7/9 - Barcode sensor pin initialised\n");
     sleep_ms(1000);
     
     // Initialise ultrasonic sensor
@@ -216,11 +228,33 @@ void initAll () {
     
     init_i2c_default();
     magnetometer_init();
-    printf("7/8 - Magnetometer pins initialised\n");
+    printf("8/9 - Magnetometer pins initialised\n");
     sleep_ms(1000);
 
     initializeMazeGrid();
-    printf("8/8 - Maze grids initialised\n");
+    
+    printf("9/9 - Maze grids initialised\n");
+}
+
+// Function that is invoked upon a change in right IR sensor's input
+void callbacks(uint gpio, uint32_t events) {
+    if(gpio == L_ENCODER_OUT) {
+        encoderPulse(L_ENCODER_OUT);
+    } 
+    if(gpio == R_ENCODER_OUT) {
+        encoderPulse(R_ENCODER_OUT);
+    } 
+    if(gpio == ECHOPIN) {
+        get_echo_pulse(ECHOPIN, events);
+    } 
+    // Check if left IR pin's state is high
+    if(gpio == LEFT_IR_PIN) {
+        wallDetected = true; 
+    } 
+    // Check if right IR pin's state is high
+    if(gpio == RIGHT_IR_PIN) {
+        wallDetected = true;
+    } 
 }
 
 // Function that is invoked upon a change in right IR sensor's input

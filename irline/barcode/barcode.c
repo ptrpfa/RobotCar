@@ -4,8 +4,21 @@
 #include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
-#include "hardware/adc.h"
 #include "barcode.h"
+
+// Global variable to keep track of barcode scan
+volatile bool barcode_scan = false;
+
+/* Global Variables */
+extern volatile bool barcode_scan;
+bool reverse_scan = false;                    // Boolean to check whether current scan direction is reversed or not
+bool start_scan = false;                      // Boolean to store current scan status, used to ignore initial change in state
+uint64_t last_state_change_time = 0;          // Variable to store the last time where the state changed (microseconds), used for measuring the time it takes to scan each bar
+uint64_t scanned_timings[CODE_LENGTH] = {0};  // Array to store the time it took to scan each bar
+uint16_t count_scanned_bar = 0;               // Count of number of bars scanned
+uint16_t count_scanned_char = 0;              // Count of number of characters scanned, used to get target character between delimiters
+char scanned_code[CODE_LENGTH + 1] = "";      // String to store scanned barcode binary representation
+char barcode_char = ERROR_CHAR;
 
 /* Function Definitions */
 // Function to setup barcode pin to digital
@@ -180,18 +193,12 @@ void read_barcode() {
 
             // Parse scanned bars
             char scanned_char = parse_scanned_bars();
-            
-            // Reset barcode after reading a character
-            reset_barcode();
-
 
             // Check validity of scanned character
             bool valid_char = (scanned_char != ERROR_CHAR) ? true : false;
 
             // Check if scanned character is valid
             if(valid_char) {
-                printf("\nCharacter scanned: %c\n", scanned_char);
-
                 // Check number of characters scanned
                 switch(count_scanned_char){
                     // Check for a delimiter character
@@ -199,24 +206,35 @@ void read_barcode() {
                         // Check if the scanned character matches the delimiter character
                         if(scanned_char != DELIMIT_CHAR) { 
                             printf("\nNo starting delimiter character found! Backup car and reset all characters scanned so far..\n");
+                            /* Prepare for next scan */
+                            // Reset scan direction
+                            reverse_scan = false;
+                            // Reset barcode character scanned
+                            barcode_char = ERROR_CHAR; 
                             // Reset number of characters scanned 
                             count_scanned_char = 0;
                             // TODO: Backup car..
+                            // Disable readings..
                         }
                         break;
                     // Check for a valid character
                     case 2:
                         // Update barcode character scanned
                         barcode_char = scanned_char;
-                        printf("\n\nCHARRR: %c\n", barcode_char);
                         break;
                     case 3:
                         // Check if the scanned character matches the delimiter character
                         if(scanned_char != DELIMIT_CHAR) { 
                             printf("\nNo ending delimiter character found! Backup car and reset all characters scanned so far..\n");
+                            /* Prepare for next scan */
+                            // Reset scan direction
+                            reverse_scan = false;
+                            // Reset barcode character scanned
+                            barcode_char = ERROR_CHAR; 
                             // Reset number of characters scanned 
                             count_scanned_char = 0;
                             // TODO: Backup car..
+                            // Disable readings..
                         }
                         else {
                             // Print for debugging
@@ -227,7 +245,7 @@ void read_barcode() {
                             // Reset scan direction
                             reverse_scan = false;
                             // Reset barcode character scanned
-                            barcode_char = ERROR_CHAR; 
+                            // barcode_char = ERROR_CHAR; 
                             // Reset number of characters scanned 
                             count_scanned_char = 0;
                         }
@@ -239,10 +257,19 @@ void read_barcode() {
             else { 
                 // Invalid character scanned
                 printf("\nInvalid barcode character scanned! Backup car and reset all characters scanned so far..\n");
+                /* Prepare for next scan */
+                // Reset scan direction
+                reverse_scan = false;
+                // Reset barcode character scanned
+                barcode_char = ERROR_CHAR; 
                 // Reset number of characters scanned 
                 count_scanned_char = 0;
                 // TODO: Backup car..
+                // Disable readings..
             }
+
+            // Reset barcode after reading a character
+            reset_barcode();
         }
 
     }
@@ -252,7 +279,17 @@ void read_barcode() {
 }
 
 // Interrupt callback function
-void interrupt_callback() {
+void interrupt_callback(uint gpio, uint32_t events) {
+    // Ensure that the time difference between current time and last button press is not within the debounce delay threshold
+    if((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS && gpio == 18) {
+        barcode_scan = true;
+        // Read barcode
+        read_barcode();
+    }
+}
+
+// Interrupt callback function
+void interrupt_callback_test() {
     // Check if button has been pressed
     if(!gpio_get(BTN_PIN)) {
         printf("\nRESET BARCODE!\n\n");
@@ -262,33 +299,48 @@ void interrupt_callback() {
     else {
         // Ensure that the time difference between current time and last button press is not within the debounce delay threshold
         if((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS) {
+            barcode_scan = true;
             // Read barcode
             read_barcode();
         }
     }
 }
 
-// Program entrypoint
-int main() {
+// Function to initialise barcode sensor
+void init_barcode() {
     // Initialise standard I/O
-    stdio_init_all();
+    // stdio_init_all();
 
+    printf("before setting pin\n");
     // Setup barcode pin
     setup_barcode_pin();
 
-    // Enable interrupt on specified pin upon a button press (rising or falling edge)
+    printf("before setting interrupt\n");
+    // Enable interrupt on specified pin upon a rising or falling edge
     gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
-    
-    /* TEMPORARY (For Maker Kit button reset)*/
-    // Configure GPIO pin as input, with a pull-up resistor (Active-Low)
-    gpio_init(BTN_PIN);
-    gpio_set_dir(BTN_PIN, GPIO_IN);
-    gpio_set_pulls(BTN_PIN, true, false);
-    gpio_set_irq_enabled_with_callback(BTN_PIN, GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
-
-    // Loop forever
-    while(true) {
-        // Perform no operations indefinitely
-        tight_loop_contents();
-    };
 }
+
+// Program entrypoint
+// int main() {
+//     // Initialise standard I/O
+//     stdio_init_all();
+
+//     // Setup barcode pin
+//     setup_barcode_pin();
+
+//     // Enable interrupt on specified pin upon a button press (rising or falling edge)
+//     gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback_test);
+    
+//     /* TEMPORARY (For Maker Kit button reset)*/
+//     // Configure GPIO pin as input, with a pull-up resistor (Active-Low)
+//     gpio_init(BTN_PIN);
+//     gpio_set_dir(BTN_PIN, GPIO_IN);
+//     gpio_set_pulls(BTN_PIN, true, false);
+//     gpio_set_irq_enabled_with_callback(BTN_PIN, GPIO_IRQ_EDGE_FALL, true, &interrupt_callback_test);
+
+//     // Loop forever
+//     while(true) {
+//         // Perform no operations indefinitely
+//         tight_loop_contents();
+//     };
+// }

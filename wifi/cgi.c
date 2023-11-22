@@ -1,4 +1,5 @@
 #include "cgi.h"
+#include "barcode.h"
 
 // CGI handler which is run when a request for /led.cgi is detected
 const char *cgi_led_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
@@ -40,6 +41,23 @@ const char *cgi_engine_handler(int iIndex, int iNumParams, char *pcParam[], char
     return "/index.shtml";
 }
 
+const char *cgi_barcode_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
+{
+    // Check if a request for the engine has been made (/barcode.cgi?barcode=x)
+    if (strcmp(pcParam[0], "barcode") == 0)
+    {
+        // Look at the argument to check if the engine is to be started (x=1) or stopped (x=0)
+        if (strcmp(pcValue[0], "1") == 0)
+        {
+            // Start the motor (you can replace 1.0f with the desired PWM value)
+            reset_barcode();
+        }
+    }
+
+    // Send the index page back to the user
+    return "/index.shtml";
+}
+
 // tCGI Struct
 // Fill this with all of the CGI requests and their respective handlers
 static const tCGI cgi_handlers[] = {
@@ -47,6 +65,8 @@ static const tCGI cgi_handlers[] = {
      "/led.cgi", cgi_led_handler},
     {// Html request for "/engine.cgi" triggers cgi_engine_handler
      "/engine.cgi", cgi_engine_handler},
+    {// Html request for "/engine.cgi" triggers cgi_engine_handler
+     "/barcode.cgi", cgi_barcode_handler},
 };
 
 void cgi_init(void)
