@@ -12,7 +12,6 @@ extern volatile bool wallDetected;
 #define RIGHT_IR_PIN 28
 
 // Functions for wall sensors
-void wall_detected(uint gpio, uint32_t events);
 void init_wallsensors();
 
 #endif
