@@ -245,7 +245,7 @@ void read_barcode() {
                             // Reset scan direction
                             reverse_scan = false;
                             // Reset barcode character scanned
-                            barcode_char = ERROR_CHAR; 
+                            // barcode_char = ERROR_CHAR; 
                             // Reset number of characters scanned 
                             count_scanned_char = 0;
                         }
@@ -279,9 +279,9 @@ void read_barcode() {
 }
 
 // Interrupt callback function
-void interrupt_callback() {
+void interrupt_callback(uint gpio, uint32_t events) {
     // Ensure that the time difference between current time and last button press is not within the debounce delay threshold
-    if((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS) {
+    if((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS && gpio == 18) {
         barcode_scan = true;
         // Read barcode
         read_barcode();
