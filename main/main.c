@@ -16,59 +16,40 @@
 #include "cgi.h"
 
 // Define maze conditions
-#define MAZE_WIDTH 10
-#define MAZE_HEIGHT 10
+#define MAZE_WIDTH 6
+#define MAZE_HEIGHT 4
 
 // Struct for maze cell
 struct Cell {
-    int x;
-    int y;
-    bool northWall;
-    bool southWall;
-    bool eastWall;
-    bool westWall;
-    int wall[4];
-    int visited; // 0 - unvisited, 1 - visited, 2 - obstacle, 3 - barcode
+    int northWall;  // -1 - unvisited, 0 - empty, 1 - wall
+    int southWall;  // -1 - unvisited, 0 - empty, 1 - wall
+    int eastWall;   // -1 - unvisited, 0 - empty, 1 - wall
+    int westWall;   // -1 - unvisited, 0 - empty, 1 - wall
+    int visited;    // 0 - unvisited, 1 - visited, 2 - obstacle, 3 - barcode
 };
-
 
 struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
 
 // Global variables
-const char WIFI_SSID[] = "JR";           // Wifi credentials
-const char WIFI_PASSWORD[] = "hello123";    // Wifi credentials
+const char WIFI_SSID[] = "dinie";           // Wifi credentials
+const char WIFI_PASSWORD[] = "testest1";    // Wifi credentials
 int position = 0;                           // 0 - S, 1 - W, 2 - N, 3 - E
 int startCar = 0;                           // From CGI to toggle car start / stop
+int cellsLeft = MAZE_HEIGHT * MAZE_WIDTH;   // Total numbers of cells to map
+int wallDetected = false;                   // Wall detection variable
 bool oneGrid = false;
-
-// Function to initialize maze grid as unexplored
-void initializeMazeGrid() {
-    // Set entire maze to unexplored
-    for (int x = 0; x < MAZE_WIDTH; x++) {
-        for (int y = 0; y < MAZE_HEIGHT; y++) {
-            mazeGrid[x][y].x = x;
-            mazeGrid[x][y].y = y;
-            mazeGrid[x][y].northWall = false;
-            mazeGrid[x][y].southWall = false;
-            mazeGrid[x][y].eastWall = false;
-            mazeGrid[x][y].westWall = false;
-        }
-    }
-}
 
 // Function to check if x, y is within maze boudaries
 int isValid(int x, int y) {
     return x >= 0 && x < MAZE_WIDTH && y >= 0 && y < MAZE_HEIGHT;
 }
-
+/*
 // Function to find the path using a flood-fill algorithm
-void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell start, struct Cell end) {
-    // If destination reached, return
-    if (start.x == end.x && start.y == end.y) {
+void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT]) {   	
+    if (cellsLeft == 0) {
         return;
     }
-    sleep_ms(2000);
-   	
+
 	// Reposition car to face S
    	if (position != 0) {
 		for(int i = position; i != 0; i--) {
@@ -87,8 +68,8 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
 
     // Try all possible moves
     for (int i = 0; i < 4; i++) {
-        int newX = start.x + dx[i];
-        int newY = start.y + dy[i];
+        int newX = mazeGrid + dx[i];
+        int newY = mazeGrid + dy[i];
 
         // Check if the new position is valid
         if (isValid(newX, newY)) {
@@ -111,7 +92,7 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
                     stopMotor();
 
                     // Recursively explore the next cell
-                    firstPathAlgo(mazeGrid, (struct Cell){newX, newY}, end);
+                    firstPathAlgo(mazeGrid);
 
                     // To break loop once returned
                     action = true;
@@ -162,6 +143,48 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT], struct Cell st
             sleep_ms(502);
             stopMotor();
             position += 1;
+        }
+    }
+}
+*/
+// Function that is invoked upon a change in right IR sensor's input
+void callbacks(uint gpio, uint32_t events) {
+    // Left wheel encoder callback
+    if (gpio == L_ENCODER_OUT) {
+        encoderPulse(L_ENCODER_OUT);
+    } 
+    // Right wheel encoder callback
+    if (gpio == R_ENCODER_OUT) {
+        encoderPulse(R_ENCODER_OUT);
+    } 
+    // Ultrasonic callback
+    if (gpio == ECHOPIN) {
+        get_echo_pulse(ECHOPIN, events);
+    } 
+    // Right wall sensor callback
+    if (gpio == LEFT_IR_PIN) {
+        wallDetected = true; 
+    } 
+    // Left wall sensor callback
+    if (gpio == RIGHT_IR_PIN) {
+        wallDetected = true;
+    } 
+    // Barcode sensor callback
+    if (gpio == IR_SENSOR_PIN) {
+        barcode_callback(gpio);
+    }
+}
+
+// Function to initialize maze grid as unexplored
+void initializeMazeGrid() {
+    // Set entire maze to unexplored
+    for (int x = 0; x < MAZE_WIDTH; x++) {
+        for (int y = 0; y < MAZE_HEIGHT; y++) {
+            mazeGrid[x][y].northWall = -1;
+            mazeGrid[x][y].southWall = -1;
+            mazeGrid[x][y].eastWall = -1;
+            mazeGrid[x][y].westWall = -1;
+            mazeGrid[x][y].visited = 0;
         }
     }
 }
@@ -224,7 +247,7 @@ void initAll () {
     // Initialise ultrasonic sensor
     setupUltrasonicPins();
     printf("6/8 - Ultrasonic pins initialised\n");
-    sleep_ms(2000);
+    sleep_ms(1000);
     
     init_i2c_default();
     magnetometer_init();
@@ -232,55 +255,20 @@ void initAll () {
     sleep_ms(1000);
 
     initializeMazeGrid();
-    
     printf("9/9 - Maze grids initialised\n");
-}
-
-// Function that is invoked upon a change in right IR sensor's input
-void callbacks(uint gpio, uint32_t events) {
-    if(gpio == L_ENCODER_OUT) {
-        encoderPulse(L_ENCODER_OUT);
-    } 
-    if(gpio == R_ENCODER_OUT) {
-        encoderPulse(R_ENCODER_OUT);
-    } 
-    if(gpio == ECHOPIN) {
-        get_echo_pulse(ECHOPIN, events);
-    } 
-    // Check if left IR pin's state is high
-    if(gpio == LEFT_IR_PIN) {
-        wallDetected = true; 
-    } 
-    // Check if right IR pin's state is high
-    if(gpio == RIGHT_IR_PIN) {
-        wallDetected = true;
-    } 
-}
-
-// Function that is invoked upon a change in right IR sensor's input
-void callbacks(uint gpio, uint32_t events) {
-    if(gpio == L_ENCODER_OUT) {
-        encoderPulse(L_ENCODER_OUT);
-    } 
-    if(gpio == R_ENCODER_OUT) {
-        encoderPulse(R_ENCODER_OUT);
-    } 
-    if(gpio == ECHOPIN) {
-        get_echo_pulse(ECHOPIN, events);
-    } 
-    // Check if left IR pin's state is high
-    if(gpio == LEFT_IR_PIN) {
-        wallDetected = true; 
-    } 
-    // Check if right IR pin's state is high
-    if(gpio == RIGHT_IR_PIN) {
-        wallDetected = true;
-    } 
 }
 
 int main() {
     // Init all required
     initAll();
+
+    // Initialise interrupts for needed sensors
+    gpio_set_irq_enabled_with_callback(L_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(R_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(ECHOPIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(LEFT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(RIGHT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &callbacks);
 
     // Get speed and distance every second
     // struct repeating_timer timer;
@@ -289,21 +277,11 @@ int main() {
     double cm;
     mag_t mag;
 
-    gpio_set_irq_enabled_with_callback(L_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(R_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(ECHOPIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(LEFT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(RIGHT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
-
     while (1) {
         // If car is set to start running from web server
         if (startCar == 1) {
-            // Set the start cell and end cell
-            struct Cell start = {0, 1, false, false, false, false};
-            struct Cell end = {MAZE_WIDTH - 2, MAZE_HEIGHT - 1, false, false, false, false};
-
             // Call pathfinding algorithm
-            // firstPathAlgo(mazeGrid, start, end);
+            // firstPathAlgo(mazeGrid);
             
             // Move till touches a wall then stop for 2 seconds
             wallDetected = false;     
@@ -315,18 +293,21 @@ int main() {
 
             // Get current angle
             read_magnetometer(&mag);
+            int32_t newAngle;
+            int32_t angleTurned; 
             int32_t initialAngle = get_angle(&mag); 
 
-            // Turn right then stop for 2 seconds
+            // Turn right
             moveMotor(1900);
-            turnMotor(1);
-            sleep_ms(500);
+            while (angleTurned  < 90) {
+                read_magnetometer(&mag);
+                newAngle = get_angle(&mag); 
+                angleTurned = newAngle - initialAngle;
+                printf("initialAngle: %d, newAngle: %d, angleTurned: %d\n", initialAngle, newAngle, angleTurned);
+                turnMotor(1);
+            }
             stopMotor();
 
-            // Get new angle and calculate difference
-            read_magnetometer(&mag);
-            int32_t newAngle = get_angle(&mag); 
-            int32_t angleTurned = newAngle - initialAngle;
             // printf("Angle turned: %d\n", angleTurned);
             sleep_ms(2000);       
 
@@ -354,9 +335,7 @@ int main() {
             angleTurned = newAngle - initialAngle;
             printf("Angle turned: %d\n", angleTurned);
             sleep_ms(2000);   
-            
-            sleep_ms(10000);
-
+        
             bool obstacle = false;
             while (!obstacle) {
                 // Get distance from ultrasonic sensor
@@ -386,15 +365,3 @@ int main() {
 
     return 0;
 }
-
-/*
-    +---+   +---+---+
-    |     S |       |
-    +   +---+   +   +
-    |   |       |   |
-    +   +   +---+   +
-    |   |   |   |   |
-    +   +   +   +   +
-    |       | E     |
-    +---+---+   +---+
-*/
