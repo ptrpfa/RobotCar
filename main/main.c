@@ -59,8 +59,8 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT]) {
             sleep_ms(2000);
 		}
 
-		position = 0;
-   	}
+        position = 0;
+    }
 
     // Define the possible moves (S, W, N, E)
     int dx[] = {0, -1, 0, 1};
@@ -90,6 +90,7 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT]) {
                 if (elapsedTime >= 0.85) {
                     // Stop motor after moving 1 grid
                     stopMotor();
+                    sleep_ms(2000);
 
                     // Recursively explore the next cell
                     firstPathAlgo(mazeGrid);
@@ -103,11 +104,10 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT]) {
                     sleep_ms(2000);
 
                     // Turn to the right to check next cell
-                    moveMotor(1900);
+                    moveMotor(pwmL,pwmR);
                     turnMotor(1);
                     sleep_ms(502);
                     stopMotor();
-                    sleep_ms(2000);
 
                     // Identify the direction tried to move and mark cell wall as blocked
                     if (i == 0) {       // Tried to moved south
@@ -131,16 +131,15 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT]) {
                 }
                 // Else, not 1 sec yet and no wall detected, continue moving
                 else {
-                    moveMotor(1900);
+                    moveMotor(pwmL,pwmR);
                 }
             }
         }   
         // New position is not valid or has been explored
         else {
             // Turn to the right
-            moveMotor(1900);
             turnMotor(1);
-            sleep_ms(502);
+            sleep_ms(525);
             stopMotor();
             position += 1;
         }
@@ -187,6 +186,12 @@ void initializeMazeGrid() {
             mazeGrid[x][y].visited = 0;
         }
     }
+}
+
+bool pid_update_callback(struct repeating_timer *t) {
+    encoderCallback();
+    update_motor_speed();
+    return true; 
 }
 
 // Function to init all sensors and motors
@@ -355,13 +360,25 @@ int main() {
                     stopMotor();
                     obstacle = true;
                 } 
-            }                                
+            }        
         }
-        // If car is set to stop
+    }
+
+    struct repeating_timer pid_timer;
+    add_repeating_timer_ms(1000,pid_update_callback,NULL,&pid_timer);
+
+    while (1) {
+        // If car is set to start running from web server
+        if (startCar == 1) {
+            // moveMotor(1900,1810);
+            printf("PWML IN MAIN: LEFT: %f, RIGHT: %f\n",pwmL,pwmR);
+            moveMotor(pwmL,pwmR);
+            sleep_ms(1500);
+        }
+        // Car is set to stop
         else {
             stopMotor();
         }
     }
-
     return 0;
 }

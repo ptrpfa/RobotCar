@@ -6,7 +6,29 @@
 #include "hardware/pwm.h"
 #include "hardware/timer.h"
 #include "motor.h"
+#include "math.h"
+#include "../encoder/encoder.h"
 
+
+extern volatile float actual_speed_L;
+extern volatile float actual_speed_R;
+
+// PID parameters
+float Kp = 2.0; 
+float Ki = 2.0; 
+float Kd = 0.0;
+
+// PID control variables
+float integral_L = 0.0;
+float integral_R = 0.0;
+float prev_error_L = 0.0;
+float prev_error_R = 0.0;
+
+float setpoint_speed = 15.0; 
+
+volatile float pwmL = 1900;
+volatile float pwmR = 1900;
+ 
 // Function to initialize pins for motors
 void initMotorSetup() {
     // Initialize GPIO pins for L motor control
@@ -60,10 +82,31 @@ void initMotorPWM() {
 }
 
 // Function to move forward
-void moveMotor(float pwm) {
+void moveMotor(float new_pwmL , float new_pwmR) {
+    printf("UPDATING MOTOR : LEFT - %f, RIGHT - %f\n", new_pwmL, new_pwmR);
+    
+    stopMotor();
+    sleep_ms(50);
     // Set both motors to output high for desired PWM
-    pwm_set_chan_level(pwm_gpio_to_slice_num(L_MOTOR_ENA), pwm_gpio_to_channel(L_MOTOR_ENA), pwm);
-    pwm_set_chan_level(pwm_gpio_to_slice_num(R_MOTOR_ENB), pwm_gpio_to_channel(R_MOTOR_ENB), pwm);
+    // Get PWM slice and channel for ENA and ENB
+	uint sliceLeft = pwm_gpio_to_slice_num(L_MOTOR_ENA);
+	uint channelLeft = pwm_gpio_to_channel(L_MOTOR_ENA);
+	uint sliceRight = pwm_gpio_to_slice_num(R_MOTOR_ENB);
+	uint channelRight = pwm_gpio_to_channel(R_MOTOR_ENB);
+
+    // Set PWM frequency to 40kHz (125MHz / 3125)
+	pwm_set_wrap(sliceLeft, 3125);              
+	pwm_set_wrap(sliceRight, 3125);
+
+    // Set clock divider to 125
+	pwm_set_clkdiv(sliceLeft, 125);
+	pwm_set_clkdiv(sliceRight, 125);
+
+
+    pwm_set_chan_level(pwm_gpio_to_slice_num(L_MOTOR_ENA), pwm_gpio_to_channel(L_MOTOR_ENA), new_pwmL);
+    // sleep_ms(50);
+    pwm_set_chan_level(pwm_gpio_to_slice_num(R_MOTOR_ENB), pwm_gpio_to_channel(R_MOTOR_ENB), new_pwmR);
+
 
     // Turn on both motors
     gpio_put(L_MOTOR_IN1, 0);
@@ -121,6 +164,46 @@ void turnMotor(int direction) {
     }
 }
 
+// Function to compute PID control signal
+float compute_pid(float setpoint, float current_value, float *integral, float *prev_error) {
+    float error = setpoint - current_value;
+    printf("current value: %f\n", current_value);
+    
+    *integral += error;
+    
+    float derivative = error - *prev_error;
+    
+    float control_signal = Kp * error + Ki * *integral + Kd * derivative;
+    
+    *prev_error = error;
+
+    return control_signal;
+}
+
+float map_pid_to_pwm(float control_signal) {
+    // Assuming control_signal is normalized between -100 and 100
+    control_signal = fmax(fmin(control_signal, 100), 0); // Clamp to [-100, 100]
+    float pwm_range = PWM_MAX - PWM_MIN;
+    float pwm_unit = pwm_range / 100.0; // Divide by control signal range
+    return ((control_signal * pwm_unit) + PWM_MIN); 
+}
+
+// Call this function at a regular interval, e.g., every 100ms
+void update_motor_speed() {
+    // Compute the control signals
+    printf("\nInside update_motor_speed:\n");
+
+    float control_signal_L = compute_pid(setpoint_speed, actual_speed_L, &integral_L, &prev_error_L);
+    float control_signal_R = compute_pid(setpoint_speed, actual_speed_R, &integral_R, &prev_error_R);
+
+    // Convert the control signals to PWM values
+    pwmL = map_pid_to_pwm(control_signal_L);
+    pwmR = map_pid_to_pwm(control_signal_R);
+    printf("left pwm mapped: %f, right pwm mapped: %f\n", pwmL, pwmR);
+    //moveMotor(pwmL, pwmR); 
+
+}
+
 /*
 int main() {
     stdio_init_all();
@@ -156,3 +239,7 @@ int main() {
     return 0;
 }
 */
+
+
+
+

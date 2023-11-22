@@ -10,6 +10,8 @@ uint32_t pulseCountR = 0;
 double movedDistance = 0.0;
 double totalDistanceL = 0.0;
 double totalDistanceR = 0.0;
+volatile float actual_speed_L;
+volatile float actual_speed_R;
 
 // Function to get motor speed and distance
 void getSpeedAndDistance(int encoder, uint32_t pulseCount, double *totalDistance) {
@@ -24,10 +26,11 @@ void getSpeedAndDistance(int encoder, uint32_t pulseCount, double *totalDistance
 
     // Print motor speed and total distance
     if (encoder == 0) {
-        printf("L Motor Speed: %.2lf cm/s, L Total Distance: %.2lf cm\n", speed, *totalDistance);
+        actual_speed_L = speed;
+        // printf("LEFT SPEED: %lf\n\n", actual_speed_L);
     } 
-    else {
-        printf("R Motor Speed: %.2lf cm/s, R Total Distance: %.2lf cm\n", speed, *totalDistance);
+    else if (encoder == 1) {
+        actual_speed_R = speed;
     }
 
     // If car has moved at least 1 grid (17cm), trigger flag
@@ -40,6 +43,8 @@ void getSpeedAndDistance(int encoder, uint32_t pulseCount, double *totalDistance
         // Reset the distance moved
         movedDistance = 0.0;
     }
+
+    return;
 }
 
 // Function to count each encoder's pulse
@@ -55,7 +60,7 @@ void encoderPulse(uint gpio) {
 }
 
 // Function to interrupt every second
-bool encoderCallback(struct repeating_timer *t) {
+bool encoderCallback() {
     // Call getSpeedAndDistance function every second
     getSpeedAndDistance(0, pulseCountL, &totalDistanceL);
     getSpeedAndDistance(1, pulseCountR, &totalDistanceR);

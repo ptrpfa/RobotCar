@@ -18,11 +18,13 @@
 
 // Global variable declaration
 extern volatile bool movedOneGrid;
+extern volatile float actual_speed_L;
+extern volatile float actual_speed_R;
 
 // Functions for encoders
 void getSpeedAndDistance(int encoder, uint32_t pulseCount, double *totalDistance);
 void encoderPulse(uint gpio);
-bool encoderCallback(struct repeating_timer *t);
+bool encoderCallback();
 void initEncoderSetup();
 
 #endif
