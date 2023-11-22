@@ -32,15 +32,18 @@ kalman_state *kalman_init(double q, double r, double p, double initial_value)
 
 void get_echo_pulse(uint gpio, uint32_t events)
 {
-    if (events & GPIO_IRQ_EDGE_RISE)
+    if (gpio == ECHOPIN && events & GPIO_IRQ_EDGE_RISE)
     {
+        printf("setting start time\n");
         // Rising edge detected, start the timer
         start_time = get_absolute_time();
     }
-    else if (events & GPIO_IRQ_EDGE_FALL)
+    else if (gpio == ECHOPIN && events & GPIO_IRQ_EDGE_FALL)
     {
+        printf("setting width time\n");
         // Falling edge detected, calculate the pulse width
         pulse_width = absolute_time_diff_us(start_time, get_absolute_time());
+        printf("pulsewidth: %d\n", pulse_width);
     }
 }
 
@@ -61,7 +64,7 @@ void setupUltrasonicPins()
     gpio_init(ECHOPIN);
     gpio_set_dir(TRIGPIN, GPIO_OUT);
     gpio_set_dir(ECHOPIN, GPIO_IN);
-    gpio_set_irq_enabled_with_callback(ECHOPIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &get_echo_pulse);
+    // gpio_set_irq_enabled_with_callback(ECHOPIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &get_echo_pulse);
 }
 
 uint64_t getPulse()
@@ -70,6 +73,7 @@ uint64_t getPulse()
     sleep_us(10);
     gpio_put(TRIGPIN, 0);
     sleep_ms(1);
+
 
     // int timeout = 26100;
     // uint64_t width = 0;
@@ -93,6 +97,7 @@ uint64_t getPulse()
 double getCm(kalman_state *state)
 {
     uint64_t pulseLength = getPulse(TRIGPIN, ECHOPIN);
+    printf("PULSELENGTH: %d\n", pulseLength);
     double measured = pulseLength / 29.0 / 2.0;
     kalman_update(state, measured);
 
