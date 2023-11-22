@@ -4,91 +4,92 @@
 #include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
-#include "hardware/adc.h"
 #include "barcode.h"
 
+// Global variable to keep track of barcode scan
+volatile bool barcode_scan = false;
+
+/* Global Variables */
+extern volatile bool barcode_scan;
+bool reverse_scan = false;                    // Boolean to check whether current scan direction is reversed or not
+bool start_scan = false;                      // Boolean to store current scan status, used to ignore initial change in state
+uint64_t last_state_change_time = 0;          // Variable to store the last time where the state changed (microseconds), used for measuring the time it takes to scan each bar
+uint64_t scanned_timings[CODE_LENGTH] = {0};  // Array to store the time it took to scan each bar
+uint16_t count_scanned_bar = 0;               // Count of number of bars scanned
+uint16_t count_scanned_char = 0;              // Count of number of characters scanned, used to get target character between delimiters
+char scanned_code[CODE_LENGTH + 1] = "";      // String to store scanned barcode binary representation
+char barcode_char = ERROR_CHAR;
+
 /* Function Definitions */
-// Function to setup barcode pin
+// Function to setup barcode pin to digital
 void setup_barcode_pin() {
-    // Initialise ADC on Raspberry Pi Pico
-    adc_init();
-    // Initialise GPIO pin for ADC operations, disabling all digital functions for that pin
-    adc_gpio_init(IR_SENSOR_PIN);
-    // Set ADC channel
-    switch(IR_SENSOR_PIN) {
-        case 26:
-            adc_select_input(0);
-            break;
-        case 27:
-            adc_select_input(1);
-            break;
-        case 28:
-            adc_select_input(2);
-            break;
-        case 29:
-            adc_select_input(3);
-            break;
-        default:
-            break;
-    }
+    // Configure GPIO pin as input, with a pull-up resistor (Active-Low)
+    gpio_init(IR_SENSOR_PIN);
+    gpio_set_dir(IR_SENSOR_PIN, GPIO_IN);
+    gpio_set_pulls(IR_SENSOR_PIN, true, false);
 }
 
-// Function to read samples from the ADC
-float __not_in_flash_func(get_adc_sample_average)() {
-    // Initialise variable to store average of ADC sampling readings
-    float sample_average = 0.0;
+// Function to reset barcode
+void reset_barcode() {
+    // Reset number of bars scanned
+    count_scanned_bar = 0;
 
-    // Capture ADC sample readings
-    adc_fifo_setup(true, false, 0, false, false);
-    adc_run(true);
-    for (int i = 0; i < SAMPLING_SIZE; i++) {
-        sample_average += adc_fifo_get_blocking();
+    // Reset scanned code
+    strcpy(scanned_code, ""); 
+
+    // Reset array of scanned timings
+    for(uint16_t i = 0; i < CODE_LENGTH; i++) {
+        scanned_timings[i] = 0;
     }
-    adc_run(false);
-    adc_fifo_drain();
 
-    // Calculate sample average voltage
-    sample_average = (sample_average / SAMPLING_SIZE) * conversion_factor;
-
-    // Return sample average
-    return sample_average;
+    // Reset scan status
+    start_scan = false;
 }
 
-// Function to reverse a string
-void reverse_string(char* str) {
-    // if the string is empty
-    if (!str) {
-        return;
-    }
-    // pointer to start and end at the string
-    int i = 0;
-    int j = strlen(str) - 1;
- 
-    // reversing string
-    while (i < j) {
-        char c = str[i];
-        str[i] = str[j];
-        str[j] = c;
-        i++;
-        j--;
-    }
-}
+// Function to parse scanned bars
+char parse_scanned_bars() {
+    // Initialise array of indexes
+    uint16_t indexes[CODE_LENGTH] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-// Function to lookup barcode character
-char* get_barcode_char() {
+    // Bubble sort the indexes array based on the values in scanned_timings
+    for (uint16_t i = 0; i < CODE_LENGTH - 1; ++i) {
+        for (uint16_t j = 0; j < CODE_LENGTH - i - 1; ++j) {
+            if (scanned_timings[indexes[j]] < scanned_timings[indexes[j + 1]]) {
+                // Swap indexes if the value at j is less than the value at j + 1
+                uint16_t temp = indexes[j];
+                indexes[j] = indexes[j + 1];
+                indexes[j + 1] = temp;
+            }
+        }
+    }
+
+    // Generate the final binary representation string (initialise all characters to 0, narrow bars)
+    for (uint16_t i = 0; i < CODE_LENGTH; ++i) {
+        scanned_code[i] = '0';
+    }
+    // Null-terminate the string
+    scanned_code[CODE_LENGTH] = '\0';
+
+    // Set the top 3 indexes (top 3 timings) to 1, wide bars
+    for (uint16_t i = 0; i < 3; ++i) {
+        scanned_code[indexes[i]] = '1';
+    }
+
+    // Initialise the decoded character
+    char decoded_char = ERROR_CHAR;
+
+    // Initialise variable to check for matches
+    bool match = false;
+
     /*   
-       NOTE: Each character in Barcode 39 is encoded using 5 black bars, 4 white bars, and 3 wide bars. To represent each of the 
-       44 unique characters, a binary representation is used, whereby 1 indicates a wide bar, and 0 indicates a narrow bar.
-       The binary representation does not capture any information on the colour of the bar (whether it is black or white).
+        NOTE: Each character in Barcode 39 is encoded using 5 black bars, 4 white bars, and 3 wide bars. To represent each of the 
+        44 unique characters, a binary representation is used, whereby 1 indicates a wide bar, and 0 indicates a narrow bar.
+        The binary representation does not capture any information on the colour of the bar (whether it is black or white).
     */
-
-    // Initialise lookup character
-    char* lookup_char = "ERROR";
-
     // Initialise array used to store each barcode character
-    char* array_char[TOTAL_CHAR] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", 
-                                    "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", 
-                                    "Y", "Z", "_", ".", "$", "/", "+", "%%", " ", "*"};       
+    char array_char[TOTAL_CHAR] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 
+                                    'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 
+                                    'Y', 'Z', '_', '.', '$', '/', '+', '%', ' '};       
 
     // Initialise array used to store binary representation of each character
     char* array_code[TOTAL_CHAR] = {"000110100", "100100001", "001100001", "101100000", "000110001", "100110000", "001110000", 
@@ -97,7 +98,7 @@ char* get_barcode_char() {
                                     "001000011", "101000010", "000010011", "100010010", "001010010", "000000111", "100000110", 
                                     "001000110", "000010110", "110000001", "011000001", "111000000", "010010001", "110010000", 
                                     "011010000", "010000101", "110000100", "010101000", "010100010", "010001010", "000101010", 
-                                    "011000100", "010010100"};
+                                    "011000100"};
                                     
     // Initialise array used to store the reversed binary representation of each character
     char* array_reverse_code[TOTAL_CHAR] = {"001011000", "100001001", "100001100", "000001101", "100011000", "000011001", 
@@ -107,186 +108,239 @@ char* get_barcode_char() {
                                             "010010001", "010010100", "111000000", "011000001", "011000100", "011010000", 
                                             "100000011", "100000110", "000000111", "100010010", "000010011", "000010110", 
                                             "101000010", "001000011", "000101010", "010001010", "010100010", "010101000", 
-                                            "001000110", "001010010"};
+                                            "001000110"};
 
-
-    // Ensure that the length of the barcode(9), number of black bars(5), number of white bars(4), and number of wide bars(3) is correct
-    if((strlen(scanned_code) == CODE_LENGTH) && (black_bar[0] + black_bar[1] == 5) && (white_bar[0] + white_bar[1] == 4) && (white_bar[1] + black_bar[1] == 3)) {
-        // Initialise variable to check for matches
-        bool match = false;
-        // Loop through all possible binary representations for a matching lookup character
-        for(int i = 0; i < TOTAL_CHAR; i++) {
-            if(strcmp(scanned_code, array_code[i]) == 0) {
-                // Update lookup character and immediately break out of loop
-                lookup_char = array_char[i];
-                match = true;
-                break;
-            }
+    // Check if parsing for delimit character
+    if(count_scanned_char == 1 || count_scanned_char == 3) {
+        // Check for a matching delimit character
+        if(strcmp(scanned_code, DELIMIT_CODE) == 0) {
+            // Update decoded character
+            decoded_char = DELIMIT_CHAR;
+            match = true;
         }
-        // Check for a match in the previous check
-        if(!match) {
-            // Reverse string
-            // reverse_string(scanned_code);
-            // Loop through all possible reverse binary representations for a matching lookup character
+        else if(strcmp(scanned_code, DELIMIT_REVERSED_CODE) == 0) {
+            // Update decoded character
+            decoded_char = DELIMIT_CHAR;
+            match = true;
+            // Update scan direction
+            reverse_scan = true;
+        }
+    }
+    else { // Parsing for character
+        // Check scan direction
+        if(!reverse_scan) {
+            // Loop through all possible binary representations for a matching decoded character
             for(int i = 0; i < TOTAL_CHAR; i++) {
-                if(strcmp(scanned_code, array_reverse_code[i]) == 0) {
-                    // Update lookup character and immediately break out of loop
-                    lookup_char = array_char[i];
+                if(strcmp(scanned_code, array_code[i]) == 0) {
+                    // Update decoded character and immediately break out of loop
+                    decoded_char = array_char[i];
+                    match = true;
                     break;
                 }
             }
-            // Reverse string back to normal again
-            // reverse_string(scanned_code);
+        }
+        // Reversed scan direction
+        else {
+            // Loop through all possible reverse binary representations for a matching decoded character
+            for(int i = 0; i < TOTAL_CHAR; i++) {
+                if(strcmp(scanned_code, array_reverse_code[i]) == 0) {
+                    // Update decoded character and immediately break out of loop
+                    decoded_char = array_char[i];
+                    match = true;
+                    break;
+                }
+            }
         }
     }
 
-    // Return lookup character obtained
-    return lookup_char;
+    // Return decoded character to caller
+    return decoded_char;
 }
 
 // Function to read from ADC
-bool read_barcode(struct repeating_timer *t) {
-    // Get current speed of the car in cm/s (to link with motor driver)
-    current_speed = 2.5;
+void read_barcode() {
+    /*  
+        Color: voltage or use edge rise/fall
+        Width: select top 3 timings for thick barcode, can use moving average of timings then compare which one take longest
+        --> need to ensure that car speed is CONSTANT 
+    */
 
-    // Calculate minimum amount of time that must be elapsed to scan the thinnest narrow bar and a wide bar
-    min_time_narrow_bar = (THINNEST_BAR / current_speed) * 1000000;
-    min_time_wide_bar = min_time_narrow_bar * WIDTH_THRESHOLD;     
+    // Perform some basic denoising or checks to detect when a barcode is encountered
+    // something here
+    // Ensure that car is moving at a constant speed, to slow down the car
+    // current_speed = 2.5;
 
-    /* Read from IR sensor */
-    // Keep a copy of the last sampling average
-    last_sample_avg = current_sample_avg;
+    // Check whether to start scan
+    if(!start_scan) { // Ignore initial change of state
+        // Change scan status to start scanning in the next round
+        start_scan = true;
+    }
+    // Start scanning
+    else {
+        // Store time difference between state change in array
+        scanned_timings[count_scanned_bar] = time_us_64() - last_state_change_time;
+        
+        // Update number of bars scanned
+        ++count_scanned_bar;
 
-    // Capture ADC sample readings
-    current_sample_avg = get_adc_sample_average();
-    // current_sample_avg = adc_read() * conversion_factor;
-    // printf("\ncurrent reading: %f", current_sample_avg);
+        // Print for debugging
+        printf("\n\nTime difference [%d]: %lld", count_scanned_bar, scanned_timings[count_scanned_bar - 1]);
 
-    // Get current color scanned (0: White, 1: Black)
-    current_color = (current_sample_avg >= MIN_BLACK_VOLTAGE) ? 1 : 0;
+        // Start decoding when number of bars scanned reaches required code length
+        if(count_scanned_bar == CODE_LENGTH) {
+            // Update number of characters scanned
+            ++count_scanned_char;
 
-    // Calculate difference in voltage between current and last sample
-    float voltage_difference = (fabs(current_sample_avg - last_sample_avg) / current_sample_avg) * 100;
+            // Parse scanned bars
+            char scanned_char = parse_scanned_bars();
 
-    /* TO BE REMOVED? */
-    // Get current time (from boot)
-    uint64_t current_time = time_us_64();
+            // Check validity of scanned character
+            bool valid_char = (scanned_char != ERROR_CHAR) ? true : false;
 
-    // Calculate difference between last state change time and current time
-    uint64_t time_diff = current_time - last_state_change_time;
+            // Check if scanned character is valid
+            if(valid_char) {
+                // Check number of characters scanned
+                switch(count_scanned_char){
+                    // Check for a delimiter character
+                    case 1:
+                        // Check if the scanned character matches the delimiter character
+                        if(scanned_char != DELIMIT_CHAR) { 
+                            printf("\nNo starting delimiter character found! Backup car and reset all characters scanned so far..\n");
+                            /* Prepare for next scan */
+                            // Reset scan direction
+                            reverse_scan = false;
+                            // Reset barcode character scanned
+                            barcode_char = ERROR_CHAR; 
+                            // Reset number of characters scanned 
+                            count_scanned_char = 0;
+                            // TODO: Backup car..
+                            // Disable readings..
+                        }
+                        break;
+                    // Check for a valid character
+                    case 2:
+                        // Update barcode character scanned
+                        barcode_char = scanned_char;
+                        break;
+                    case 3:
+                        // Check if the scanned character matches the delimiter character
+                        if(scanned_char != DELIMIT_CHAR) { 
+                            printf("\nNo ending delimiter character found! Backup car and reset all characters scanned so far..\n");
+                            /* Prepare for next scan */
+                            // Reset scan direction
+                            reverse_scan = false;
+                            // Reset barcode character scanned
+                            barcode_char = ERROR_CHAR; 
+                            // Reset number of characters scanned 
+                            count_scanned_char = 0;
+                            // TODO: Backup car..
+                            // Disable readings..
+                        }
+                        else {
+                            // Print for debugging
+                            printf("\n\nBarcode Character: %c\n", barcode_char);
+                            // TODO: Transmit scanned code..
 
-    // Check for a valid change in state (not first read, color has changed, voltage difference is valid and time difference is valid)
-    if((current_color != last_scanned_color) && (voltage_difference >= MIN_VOLTAGE_DIFF) && (time_diff >= min_time_narrow_bar)) {
-        /* Check current scan status */
-        // IDLE
-        if(start_scan == false) {
-            printf("\nSCAN STATUS: IDLE");
-            // Change scan status to start scanning in the next round
-            start_scan = true;
-        }
-        // START SCAN or SCANNING
-        else {
-            // Get the type of the previous bar scanned (0: Narrow, 1: Wide)
-            last_scanned_type = (time_diff >= min_time_wide_bar) ? 1 : 0;
-
-            // Add binary representation of barcode and update white or black bar array
-            // Check if the string is empty and update it accordingly
-            if (strcmp(scanned_code, "\0") == 0) {
-                strcpy(scanned_code, "");  // Clear the initial string
+                            /* Prepare for next scan */
+                            // Reset scan direction
+                            reverse_scan = false;
+                            // Reset barcode character scanned
+                            // barcode_char = ERROR_CHAR; 
+                            // Reset number of characters scanned 
+                            count_scanned_char = 0;
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
-            (last_scanned_type == 0) ? strcat(scanned_code, "0") : strcat(scanned_code, "1");
-            (last_scanned_color == 0) ? white_bar[last_scanned_type]++ : black_bar[last_scanned_type]++;
-
-            // Get current time in terms of hours, minutes, seconds, and milliseconds
-            uint64_t milliseconds = current_time / 1000 % 1000;
-            uint64_t seconds = (current_time / 1000000) % 60;
-            uint64_t minutes = (current_time / 60000000) % 60;
-            uint64_t hours = (current_time / 3600000000) % 24;
-
-            // Print for debugging
-            printf("\n\nSCAN STATUS: SCANNING");
-            printf("\n~~~~~~PREVIOUS BAR SCANNED~~~~~~~~~\n");
-            printf("\n%02lld:%02lld:%02lld:%03lld => Color: %s, Bar: %s", hours, minutes, seconds, milliseconds, (last_scanned_color == 0) ? "White" : "Black", (last_scanned_type == 0) ? "Thin" : "Thick");
-            printf("\nTIME DIFFERENCE: %02lld microseconds", time_diff);
-            printf("\nSCANNED CODE: %s", scanned_code);
-            
-            // Check for barcode
-            if(strlen(scanned_code) == CODE_LENGTH) {
-
-                // Sanity check and change to top 3 bars if wrong
-                // something here
-
-                printf("\n\nCode Received!\n%s: %s\n", scanned_code, get_barcode_char());
-
-                // Reset
-                strcpy(scanned_code, "\0");
-                white_bar[0] = 0;
-                white_bar[1] = 0;
-                black_bar[0] = 0;
-                black_bar[1] = 0;
-                last_scanned_color = 2;
-                last_scanned_type = 2; 
-                // Reset scan status to IDLE state
-                start_scan = false;
+            else { 
+                // Invalid character scanned
+                printf("\nInvalid barcode character scanned! Backup car and reset all characters scanned so far..\n");
+                /* Prepare for next scan */
+                // Reset scan direction
+                reverse_scan = false;
+                // Reset barcode character scanned
+                barcode_char = ERROR_CHAR; 
+                // Reset number of characters scanned 
+                count_scanned_char = 0;
+                // TODO: Backup car..
+                // Disable readings..
             }
+
+            // Reset barcode after reading a character
+            reset_barcode();
         }
-        // Update last state change time and last scanned color
-        last_state_change_time = time_us_64();
-        last_scanned_color = current_color;
+
+    }
+    
+    // Update last state change time after all computations are completed
+    last_state_change_time = time_us_64();
+}
+
+// Interrupt callback function
+void interrupt_callback(uint gpio, uint32_t events) {
+    // Ensure that the time difference between current time and last button press is not within the debounce delay threshold
+    if((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS && gpio == 18) {
+        barcode_scan = true;
+        // Read barcode
+        read_barcode();
+    }
+}
+
+// Interrupt callback function
+void interrupt_callback_test() {
+    // Check if button has been pressed
+    if(!gpio_get(BTN_PIN)) {
+        printf("\nRESET BARCODE!\n\n");
+        // Reset barcode
+        reset_barcode();
     }
     else {
-        // Update last scanned color
-        last_scanned_color = current_color;
+        // Ensure that the time difference between current time and last button press is not within the debounce delay threshold
+        if((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS) {
+            barcode_scan = true;
+            // Read barcode
+            read_barcode();
+        }
     }
-    
-    // Return to caller
-    return true;
 }
 
-// Function that is invoked upon a button press
-void button_callback()
-{
-    // Reset
-    strcpy(scanned_code, "\0");
-    white_bar[0] = 0;
-    white_bar[1] = 0;
-    black_bar[0] = 0;
-    black_bar[1] = 0;
-    last_scanned_color = 2;
-    last_scanned_type = 2; 
-    // Reset scan status to IDLE state
-    start_scan = false;
-
-    printf("\nRESET BARCODE!\n\n");
-}
-
-// Program entrypoint
-int main() {
+// Function to initialise barcode sensor
+void init_barcode() {
     // Initialise standard I/O
-    stdio_init_all();
-    
+    // stdio_init_all();
+
+    printf("before setting pin\n");
     // Setup barcode pin
     setup_barcode_pin();
 
-    // Initialise repeating_timer struct for barcode
-    struct repeating_timer barcode_timer; 
-
-    // Start periodic timer to periodically read for barcodes
-    add_repeating_timer_ms(-IR_SENSOR_PERIODIC_INTERVAL, read_barcode, NULL, &barcode_timer);
-
-    /* TEMPORARY (For Maker Kit button reset)*/
-    // Configure GPIO pin as input, with a pull-up resistor (Active-Low)
-    gpio_init(20);
-    gpio_set_dir(20, GPIO_IN);
-    gpio_set_pulls(20, true, false);
-
-    // Enable interrupt on specified pin upon a button press (rising or falling edge)
-    gpio_set_irq_enabled_with_callback(20, GPIO_IRQ_EDGE_FALL, true, &button_callback);
-
-
-    // Loop forever
-    while(true) {
-        // Perform no operations indefinitely
-        tight_loop_contents();
-    };
+    printf("before setting interrupt\n");
+    // Enable interrupt on specified pin upon a rising or falling edge
+    gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
 }
+
+// Program entrypoint
+// int main() {
+//     // Initialise standard I/O
+//     stdio_init_all();
+
+//     // Setup barcode pin
+//     setup_barcode_pin();
+
+//     // Enable interrupt on specified pin upon a button press (rising or falling edge)
+//     gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback_test);
+    
+//     /* TEMPORARY (For Maker Kit button reset)*/
+//     // Configure GPIO pin as input, with a pull-up resistor (Active-Low)
+//     gpio_init(BTN_PIN);
+//     gpio_set_dir(BTN_PIN, GPIO_IN);
+//     gpio_set_pulls(BTN_PIN, true, false);
+//     gpio_set_irq_enabled_with_callback(BTN_PIN, GPIO_IRQ_EDGE_FALL, true, &interrupt_callback_test);
+
+//     // Loop forever
+//     while(true) {
+//         // Perform no operations indefinitely
+//         tight_loop_contents();
+//     };
+// }

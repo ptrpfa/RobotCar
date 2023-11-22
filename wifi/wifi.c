@@ -10,8 +10,8 @@
 int startCar = 0;
 
 // WIFI Credentials
-const char WIFI_SSID[] = "";
-const char WIFI_PASSWORD[] = "";
+const char WIFI_SSID[] = "JR";
+const char WIFI_PASSWORD[] = "hello123";
 
 int main()
 {

@@ -9,24 +9,10 @@
 // Global variable to keep track of wall detection
 volatile bool wallDetected = false;
 
-// Function that is invoked upon a change in right IR sensor's input
-void wall_detected(uint gpio, uint32_t events) {
-    // Check if left IR pin's state is high
-    if(gpio == LEFT_IR_PIN) {
-        wallDetected = true; 
-        printf("Left IR Sensor: Detected Wall!\n");
-    } 
-    // Check if right IR pin's state is high
-    if(gpio == RIGHT_IR_PIN) {
-        wallDetected = true;
-        printf("Right IR Sensor: Detected Wall!\n");
-    } 
-}
-
 // Function to initialise ir line sensors
 void init_wallsensors() {
     // Initialize standard I/O
-    stdio_init_all();
+    // stdio_init_all();
 
     // Initialize specified pins as input with a pull-up resistor
     gpio_init(LEFT_IR_PIN);
@@ -37,8 +23,8 @@ void init_wallsensors() {
     gpio_pull_up(RIGHT_IR_PIN);
 
     // Enable interrupt on rising or falling edge for left IR sensor
-    gpio_set_irq_enabled_with_callback(LEFT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &wall_detected);
-    gpio_set_irq_enabled_with_callback(RIGHT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &wall_detected);
+    // gpio_set_irq_enabled_with_callback(LEFT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &wall_detected);
+    // gpio_set_irq_enabled_with_callback(RIGHT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &wall_detected);
 }
 
 /*

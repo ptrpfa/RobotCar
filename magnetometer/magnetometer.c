@@ -8,20 +8,23 @@
 #define MAGNETOMETER_ADDRESS 0x1E       // The I2C address of the magnetometer
 #define I2C_BAUD 400                    // 400 or 100 (kHz)
 #define REFRESH_PERIOD 1080             // ms
+#define PICO_I2C_SDA_PIN 14
+#define PICO_I2C_SCL_PIN 15
+#define I2C_INST &i2c1_inst
 
 void init_i2c_default() {
-   i2c_init(i2c_default, I2C_BAUD * 1000);
-   gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
-   gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
-   gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
-   gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
+   i2c_init(I2C_INST, I2C_BAUD * 1000);
+   gpio_set_function(PICO_I2C_SDA_PIN, GPIO_FUNC_I2C);
+   gpio_set_function(PICO_I2C_SCL_PIN, GPIO_FUNC_I2C);
+   gpio_pull_up(PICO_I2C_SDA_PIN);
+   gpio_pull_up(PICO_I2C_SCL_PIN);
 }
 
 void magnetometer_init() {
    uint8_t buffer[2] = {MAG_CRA, 0x10}; // 15 Hz refreshrate
    
    i2c_write_blocking(
-      i2c_default,
+      I2C_INST,
       INTERFACE_A,
       buffer,
       2,
@@ -32,7 +35,7 @@ void magnetometer_init() {
    buffer[1] = 0xE0;                    // Gain - range +-8.1 Gauss, Gain X/Y and Z [LSB/Gauss] 230, GainZ [LSB/Gauss] 205
    
    i2c_write_blocking(
-      i2c_default,
+      I2C_INST,
       INTERFACE_A,
       buffer,
       2,
@@ -43,7 +46,7 @@ void magnetometer_init() {
    buffer[1] = 0x00;                    // Continuous-conversion mode
    
    i2c_write_blocking(
-      i2c_default,
+      I2C_INST,
       INTERFACE_A,
       buffer,
       2,
@@ -59,7 +62,7 @@ void read_magnetometer(mag_t *mag) {
    uint8_t reg = MAG_REG;
 
    i2c_write_blocking(
-      i2c_default,
+      I2C_INST,
       INTERFACE_A,
       &reg,
       1,
@@ -67,7 +70,7 @@ void read_magnetometer(mag_t *mag) {
    );
 
    i2c_read_blocking(
-      i2c_default,
+      I2C_INST,
       INTERFACE_A,
       buffer,
       6,
@@ -93,6 +96,7 @@ int32_t get_angle(mag_t *mag) {
    return angle;
 }
 
+/*
 int main() {
    
    // init all
@@ -114,3 +118,4 @@ int main() {
 
    return 0;
 }
+*/

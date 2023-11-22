@@ -1,3 +1,5 @@
+// Traverse to map out the entire maze into a grid
+
 #include <string.h>
 #include "database.h"
 
