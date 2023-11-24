@@ -19,7 +19,7 @@ void setup_barcode_pin();   // Function to setup barcode pin to digital
 void reset_barcode();       // Function to reset barcode
 char parse_scanned_bars(); // Function to parse scanned bars
 void read_barcode();        // Function to read from ADC
-void interrupt_callback();  // Interrupt callback function
+void barcode_callback();  // Interrupt callback function
 void init_barcode();
 
 extern char barcode_char;        // Character variable to store scanned and parsed barcode character

@@ -17,14 +17,17 @@
 #define WHEEL_CIRCUMFERENCE 22
 
 // Global variable declaration
-extern volatile bool movedOneGrid;
+extern volatile bool completeMovement;
+extern volatile uint32_t oscillation;
 extern volatile float actual_speed_L;
 extern volatile float actual_speed_R;
 
 // Functions for encoders
-void getSpeedAndDistance(int encoder, uint32_t pulseCount, double *totalDistance);
+void getSpeedAndDistance(int encoder, uint32_t pulseCount);
 void encoderPulse(uint gpio);
 bool encoderCallback();
 void initEncoderSetup();
+uint32_t getGridsMoved();
+void startTracking(int targetGrids);
 
 #endif

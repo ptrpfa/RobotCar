@@ -26,5 +26,6 @@ void moveMotor(float pwmL , float pwmR);
 void stopMotor();
 void turnMotor(int direction);
 void update_motor_speed();
+void moveGrids(int number_of_grids);
 
 #endif

@@ -18,7 +18,8 @@
 // Define maze conditions
 #define MAZE_WIDTH 6
 #define MAZE_HEIGHT 4
-
+#define STARTING_X 0
+#define STARTING_Y 2 
 // Struct for maze cell
 struct Cell {
     int northWall;  // -1 - unvisited, 0 - empty, 1 - wall
@@ -29,23 +30,178 @@ struct Cell {
 };
 
 struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
+struct repeating_timer pid_timer;
 
 // Global variables
-const char WIFI_SSID[] = "dinie";           // Wifi credentials
-const char WIFI_PASSWORD[] = "testest1";    // Wifi credentials
+const char WIFI_SSID[] = "SINGTEL-6CAN";           // Wifi credentials
+const char WIFI_PASSWORD[] = "ser760172";    // Wifi credentials
 int position = 0;                           // 0 - S, 1 - W, 2 - N, 3 - E
 int startCar = 0;                           // From CGI to toggle car start / stop
 int cellsLeft = MAZE_HEIGHT * MAZE_WIDTH;   // Total numbers of cells to map
-int wallDetected = false;                   // Wall detection variable
+bool wallDetected = false;                   // Wall detection variable
+bool leftWallDetected = false;                   // Wall detection variable
+bool rightWallDetected = false;                   // Wall detection variable
 bool oneGrid = false;
 
 // Function to check if x, y is within maze boudaries
 int isValid(int x, int y) {
     return x >= 0 && x < MAZE_WIDTH && y >= 0 && y < MAZE_HEIGHT;
 }
-/*
+
+void updateWall(int wall, int x, int y, int new_position) {
+    switch(new_position) 
+    {
+        // South
+        case 0:
+            mazeGrid[x][y].southWall = wall;
+            if (x < MAZE_WIDTH - 2) {
+                mazeGrid[x+1][y].northWall = wall;
+            }
+            break;
+        // West
+        case 1:
+            mazeGrid[x][y].westWall = wall;
+            if (x < MAZE_HEIGHT - 2) {
+                mazeGrid[x+1][y].eastWall = wall;
+            }
+            break;
+        // North
+        case 2:
+            mazeGrid[x][y].northWall = wall;
+            if (x > 0) {
+                mazeGrid[x+1][y].southWall = wall;
+            }
+            break;
+        // East
+        case 3:
+            mazeGrid[x][y].eastWall = wall;
+            if (x > 0) {
+                mazeGrid[x+1][y].westWall = wall;
+            }
+            break;
+    }
+}
+
+bool pid_update_callback(struct repeating_timer *t) {
+    encoderCallback();
+    update_motor_speed();
+    return true; 
+}
+
+void firstPathAlgo() {   	
+    // Move one grid
+    int current_x = 2;
+    int current_y = 0;
+
+    // Start facing south and move
+    add_repeating_timer_ms(100, pid_update_callback, NULL, &pid_timer);
+    moveMotor(pwmL, pwmR);
+    while (!wallDetected && !obstacleDetected) {
+        // Wait
+    }
+    // Encountered wall, stop
+    cancel_repeating_timer(&pid_timer);
+    stopMotor();
+
+    uint32_t grids_moved = getGridsMoved();
+    printf("GRIDS MOVED: %d\n", grids_moved);
+    sleep_ms(2000);
+    
+    // Update mazegrid
+    wallDetected = false;
+    updateWall(1, current_x, current_y, position);
+
+    // Turn right
+    turnMotor(1);
+    sleep_ms(2000);
+
+    // Update position
+    position++;
+    
+    if (mazeGrid[current_x][current_y].westWall == -1) {
+        if (wallDetected) {
+            updateWall(1, current_x, current_y, position);
+        } else {
+            updateWall(0, current_x, current_y, position);
+        }
+    }
+    sleep_ms(2000);
+    wallDetected = false;
+
+    // Turn 180
+    turnMotor(1);
+    turnMotor(1);
+    sleep_ms(2000);
+    position += 2;
+
+    if (mazeGrid[current_x][current_y].eastWall == -1) {
+        if (wallDetected) {
+            updateWall(1, current_x, current_y, position);
+        } else {
+            updateWall(0, current_x, current_y, position);
+        }
+    }
+
+    sleep_ms(2000);
+
+    printf("STATUS CHECK\n");
+    printf("SOUTHWALL: %d\n", mazeGrid[current_x][current_y].southWall);
+    printf("EASTWALL: %d\n", mazeGrid[current_x][current_y].eastWall);
+    printf("WESTWALL: %d\n", mazeGrid[current_x][current_y].westWall);
+
+    return;
+}
+
+void hard_coded(){
+    turnMotor(1);
+    sleep_ms(1500);
+    
+    // add_repeating_timer_ms(1000, pid_update_callback, NULL, &pid_timer);
+    moveMotor(pwmL, pwmR);
+    while (!wallDetected) {
+        // Wait
+    }
+
+    // Encounterd wall, stop
+    stopMotor();
+    sleep_ms(1500);
+
+    turnMotor(0);
+    wallDetected = false;
+    sleep_ms(1500);
+
+    add_repeating_timer_ms(1000, pid_update_callback, NULL, &pid_timer);
+    moveMotor(pwmL, pwmR);
+    while (!wallDetected) {
+        // Wait
+    }
+
+    // Encounterd wall, stop
+    stopMotor();
+    sleep_ms(1500);
+
+    turnMotor(0);
+    wallDetected = false;
+    sleep_ms(1500);
+
+    add_repeating_timer_ms(1000, pid_update_callback, NULL, &pid_timer);
+    moveMotor(pwmL, pwmR);
+    while (!wallDetected) {
+        // Wait
+    }
+
+    // Encounterd wall, stop
+    stopMotor();
+    sleep_ms(1500);
+
+    turnMotor(1);
+    wallDetected = false;
+    sleep_ms(1500);
+}
 // Function to find the path using a flood-fill algorithm
-void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT]) {   	
+/*
+* OLD ALGO
+void firstPathAlgo() {   	
     if (cellsLeft == 0) {
         return;
     }
@@ -146,31 +302,40 @@ void firstPathAlgo(struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT]) {
     }
 }
 */
+
+
 // Function that is invoked upon a change in right IR sensor's input
 void callbacks(uint gpio, uint32_t events) {
-    // Left wheel encoder callback
-    if (gpio == L_ENCODER_OUT) {
-        encoderPulse(L_ENCODER_OUT);
-    } 
-    // Right wheel encoder callback
-    if (gpio == R_ENCODER_OUT) {
-        encoderPulse(R_ENCODER_OUT);
-    } 
-    // Ultrasonic callback
-    if (gpio == ECHOPIN) {
-        get_echo_pulse(ECHOPIN, events);
-    } 
-    // Right wall sensor callback
-    if (gpio == LEFT_IR_PIN) {
-        wallDetected = true; 
-    } 
-    // Left wall sensor callback
-    if (gpio == RIGHT_IR_PIN) {
-        wallDetected = true;
-    } 
-    // Barcode sensor callback
-    if (gpio == IR_SENSOR_PIN) {
-        barcode_callback(gpio);
+    switch(gpio) 
+    {
+        // Left wheel encoder callback
+        case L_ENCODER_OUT:
+            encoderPulse(L_ENCODER_OUT);
+            break;
+        // Right wheel encoder callback
+        case R_ENCODER_OUT:
+            encoderPulse(R_ENCODER_OUT);
+            break;
+        // Ultrasonic callback
+        case ECHOPIN:
+            get_echo_pulse(ECHOPIN, events);
+            break;
+        // Left wall sensor callback
+        case LEFT_IR_PIN:
+            printf("WALL DETECTED\n");
+            leftWallDetected = true;
+            break;
+        // Right wall sensor callback
+        case RIGHT_IR_PIN:
+            printf("WALL DETECTED\n");
+            rightWallDetected = true;
+            break;
+        // Barcode sensor callback
+        case IR_SENSOR_PIN:
+            barcode_callback(gpio);
+            break;
+        default:
+            break;
     }
 }
 
@@ -188,11 +353,7 @@ void initializeMazeGrid() {
     }
 }
 
-bool pid_update_callback(struct repeating_timer *t) {
-    encoderCallback();
-    update_motor_speed();
-    return true; 
-}
+
 
 // Function to init all sensors and motors
 void initAll () {
@@ -249,11 +410,6 @@ void initAll () {
     printf("7/9 - Barcode sensor pin initialised\n");
     sleep_ms(1000);
     
-    // Initialise ultrasonic sensor
-    setupUltrasonicPins();
-    printf("6/8 - Ultrasonic pins initialised\n");
-    sleep_ms(1000);
-    
     init_i2c_default();
     magnetometer_init();
     printf("8/9 - Magnetometer pins initialised\n");
@@ -263,6 +419,45 @@ void initAll () {
     printf("9/9 - Maze grids initialised\n");
 }
 
+void initInterrupts() {
+    // Initialise interrupts for needed sensors
+    gpio_set_irq_enabled_with_callback(L_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(R_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(ECHOPIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(LEFT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(RIGHT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
+    gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &callbacks);
+}
+
+
+int main() {
+    // Init all required
+    initAll();
+    initInterrupts();
+    
+    // Init PID
+    // add_repeating_timer_ms(1000, pid_update_callback, NULL, &pid_timer);
+
+    kalman_state *state = kalman_init(1, 100, 0, 0);
+    // double cm;
+
+    while(true) {
+        if (startCar == 1) {
+            // Call pathfinding algorithm
+            // firstPathAlgo();
+            // hard_coded();
+            add_repeating_timer_ms(100, pid_update_callback, NULL, &pid_timer);
+            moveGrids(4);
+            cancel_repeating_timer(&pid_timer);
+            sleep_ms(10000);
+        }
+    }
+
+    return 0;    
+}   
+
+/*
+* OLD MAIN
 int main() {
     // Init all required
     initAll();
@@ -277,7 +472,7 @@ int main() {
 
     // Get speed and distance every second
     // struct repeating_timer timer;
-    // add_repeating_timer_ms(1000, encoderCallback, NULL, &timer);
+    // add_repeating_timer_ms(10000, encoderCallback, NULL, &timer);
     kalman_state *state = kalman_init(1, 100, 0, 0);
     double cm;
     mag_t mag;
@@ -290,87 +485,112 @@ int main() {
             
             // Move till touches a wall then stop for 2 seconds
             wallDetected = false;     
-            while (!wallDetected){
-                moveMotor(1900);
+            moveMotor(pwmL,pwmR);
+            while (!wallDetected || !obstacleDetected){
+                // Wait
             }
             stopMotor();
             sleep_ms(2000);       
 
             // Get current angle
-            read_magnetometer(&mag);
-            int32_t newAngle;
-            int32_t angleTurned; 
-            int32_t initialAngle = get_angle(&mag); 
-
+            // read_magnetometer(&mag);
+            // int32_t angleTurned; 
+            // int32_t initialAngle = get_angle(&mag); 
+            // int32_t newAngle = initialAngle;
+            // int32_t target_angle;
+            
             // Turn right
-            moveMotor(1900);
-            while (angleTurned  < 90) {
-                read_magnetometer(&mag);
-                newAngle = get_angle(&mag); 
-                angleTurned = newAngle - initialAngle;
-                printf("initialAngle: %d, newAngle: %d, angleTurned: %d\n", initialAngle, newAngle, angleTurned);
-                turnMotor(1);
-            }
-            stopMotor();
+            // moveMotor(pwmL,pwmR);
+            turnMotor(1);
+            // turnRight();
+            // if (initialAngle < 90) {
+            //     target_angle = 270 + initialAngle;
+            //     printf("INITIAL ANGLE: %d, NEW ANGLE: %d, TARGET ANGLE: %d\n", initialAngle, newAngle, target_angle);
+            //     moveMotor(pwmL,pwmR);
+            //     while (newAngle <= initialAngle || newAngle > target_angle ) {
+            //         read_magnetometer(&mag);
+            //         newAngle = get_angle(&mag); 
+            //         printf("initialAngle: %d, newAngle: %d\n", initialAngle, newAngle);
+            //         turnMotor(1);
+            //     }
+            // } else {
+            //     target_angle = initialAngle - 90;
+            //     printf("INITIAL ANGLE: %d, NEW ANGLE: %d, TARGET ANGLE: %d\n", initialAngle, newAngle, target_angle);
+            //     moveMotor(pwmL,pwmR);
+            //     while (newAngle >= target_angle ) {
+            //         read_magnetometer(&mag);
+            //         newAngle = get_angle(&mag); 
+            //         printf("initialAngle: %d, newAngle: %d\n", initialAngle, newAngle);
+            //         turnMotor(1);
+            //     }
+            // }
+
+            // stopMotor();
 
             // printf("Angle turned: %d\n", angleTurned);
-            sleep_ms(2000);       
+            // sleep_ms(2000);       
 
             // Move till touches a wall then stop for 2 seconds
             wallDetected = false;     
+            moveMotor(pwmL,pwmR);
             while (!wallDetected){
-                moveMotor(1900);
+                // Wait
             }
             stopMotor();
             sleep_ms(2000); 
 
-            // Get current angle
-            read_magnetometer(&mag);
-            initialAngle = get_angle(&mag); 
-
-            // Turn left then stop for 2 seconds
-            moveMotor(1900);
             turnMotor(0);
-            sleep_ms(500);
-            stopMotor();
 
-            // Get new angle and calculate difference
-            read_magnetometer(&mag);
-            newAngle = get_angle(&mag); 
-            angleTurned = newAngle - initialAngle;
-            printf("Angle turned: %d\n", angleTurned);
-            sleep_ms(2000);   
+
+            // // Get current angle
+            // read_magnetometer(&mag);
+            // initialAngle = get_angle(&mag); 
+
+            // // Turn left then stop for 2 seconds
+            // moveMotor(pwmL,pwmR);
+            // turnMotor(0);
+            // sleep_ms(500);
+            // stopMotor();
+
+            // // Get new angle and calculate difference
+            // read_magnetometer(&mag);
+            // newAngle = get_angle(&mag); 
+            // angleTurned = newAngle - initialAngle;
+            // printf("Angle turned: %d\n", angleTurned);
+            // sleep_ms(2000);   
         
-            bool obstacle = false;
-            while (!obstacle) {
-                // Get distance from ultrasonic sensor
-                for (int i = 0; i < 10; i++) {
-                    cm = getCm(state);
-                }
-                printf("Distance: %.2lf\n", cm);
-                // Move straight
-                moveMotor(1600);
+            // bool obstacle = false;
+            // // Move straight
+            // moveMotor(pwmL,pwmR);
 
-                // If there is an obstacle too close, stop motor and u-turn right
-                if (cm < 5) {            
-                    stopMotor();
-                    sleep_ms(2000);
-                    turnMotor(1);
-                    sleep_ms(1200);
-                    stopMotor();
-                    obstacle = true;
-                } 
-            }        
+            // while (!obstacle) {
+            //     // Get distance from ultrasonic sensor
+            //     for (int i = 0; i < 10; i++) {
+            //         cm = getCm(state);
+            //     }
+            //     printf("Distance: %.2lf\n", cm);
+     
+
+            //     // If there is an obstacle too close, stop motor and u-turn right
+            //     if (cm < 5) {            
+            //         stopMotor();
+            //         sleep_ms(2000);
+            //         turnMotor(1);
+            //         sleep_ms(1200);
+            //         stopMotor();
+            //         obstacle = true;
+            //     } 
+            // }        
         }
     }
 
     struct repeating_timer pid_timer;
-    add_repeating_timer_ms(1000,pid_update_callback,NULL,&pid_timer);
+    add_repeating_timer_ms(10000,pid_update_callback,NULL,&pid_timer);
 
     while (1) {
         // If car is set to start running from web server
         if (startCar == 1) {
-            // moveMotor(1900,1810);
+            // moveMotor(pwmL,pwmR));
             printf("PWML IN MAIN: LEFT: %f, RIGHT: %f\n",pwmL,pwmR);
             moveMotor(pwmL,pwmR);
             sleep_ms(1500);
@@ -382,3 +602,5 @@ int main() {
     }
     return 0;
 }
+*/
+

@@ -11,6 +11,7 @@
 #define ECHOPIN 1
 
 typedef struct kalman_state_ kalman_state;
+extern volatile bool obstacleDetected;
 
 kalman_state *kalman_init(double q, double r, double p, double initial_value);
 void get_echo_pulse(uint gpio, uint32_t events);

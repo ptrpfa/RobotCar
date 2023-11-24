@@ -9,6 +9,7 @@
 
 volatile absolute_time_t start_time;
 volatile uint64_t pulse_width = 0;
+volatile bool obstacleDetected = false;
 
 typedef struct kalman_state_
 {
@@ -34,13 +35,11 @@ void get_echo_pulse(uint gpio, uint32_t events)
 {
     if (gpio == ECHOPIN && events & GPIO_IRQ_EDGE_RISE)
     {
-        printf("setting start time\n");
         // Rising edge detected, start the timer
         start_time = get_absolute_time();
     }
     else if (gpio == ECHOPIN && events & GPIO_IRQ_EDGE_FALL)
     {
-        printf("setting width time\n");
         // Falling edge detected, calculate the pulse width
         pulse_width = absolute_time_diff_us(start_time, get_absolute_time());
         printf("pulsewidth: %d\n", pulse_width);
@@ -73,34 +72,20 @@ uint64_t getPulse()
     sleep_us(10);
     gpio_put(TRIGPIN, 0);
     sleep_ms(1);
-
-
-    // int timeout = 26100;
-    // uint64_t width = 0;
-
-    // while (gpio_get(ECHOPIN) == 0)
-    //     tight_loop_contents();
-    // absolute_time_t startTime = get_absolute_time();
-    // while (gpio_get(ECHOPIN) == 1)
-    // {
-    //     width++;
-    //     sleep_us(1);
-    //     if (width > timeout)
-    //         return 0;
-    // }
-    // absolute_time_t endTime = get_absolute_time();
-
-    // return absolute_time_diff_us(startTime, endTime);
+    
     return pulse_width;
 }
 
 double getCm(kalman_state *state)
 {
     uint64_t pulseLength = getPulse(TRIGPIN, ECHOPIN);
-    printf("PULSELENGTH: %d\n", pulseLength);
     double measured = pulseLength / 29.0 / 2.0;
     kalman_update(state, measured);
 
+    if (state->x < 10) {
+        obstacleDetected = true;
+    }
+    
     return state->x;
 }
 

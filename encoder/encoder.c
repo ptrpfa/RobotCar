@@ -1,79 +1,103 @@
 // Control L and R encoder
 
 #include "encoder.h"
-// #include "motor.h"
 
 // Global variable declaration
-volatile bool movedOneGrid = false;
+volatile bool completeMovement = false;
+uint32_t targetGridNumber = 0;
 uint32_t pulseCountL = 0;
 uint32_t pulseCountR = 0;
+volatile uint32_t oscillation = 0;
 double movedDistance = 0.0;
-double totalDistanceL = 0.0;
-double totalDistanceR = 0.0;
 volatile float actual_speed_L;
 volatile float actual_speed_R;
 
 // Function to get motor speed and distance
-void getSpeedAndDistance(int encoder, uint32_t pulseCount, double *totalDistance) {
+void getSpeedAndDistance(int encoder, uint32_t pulseCount)
+{
     // Calculate motor speed in cm/s
     double distancePerHole = ENCODER_CIRCUMFERENCE / ENCODER_NOTCH;
-    double speed = (distancePerHole * pulseCount) / 1.0;
+    double distance = distancePerHole * pulseCount;
+    double speed = distance / 0.1;
 
     // Calculate and accumulate the distance
-    double distance = speed * 1.0;
-    *totalDistance += distance;
     movedDistance += distance;
 
     // Print motor speed and total distance
-    if (encoder == 0) {
+    if (encoder == 0)
+    {
         actual_speed_L = speed;
         // printf("LEFT SPEED: %lf\n\n", actual_speed_L);
-    } 
-    else if (encoder == 1) {
+    }
+    else if (encoder == 1)
+    {
         actual_speed_R = speed;
     }
-
-    // If car has moved at least 1 grid (17cm), trigger flag
-    if (movedDistance >= 17) {
-        printf("A GRID PASSED\n");
-
-        // Trigger 1 grid moved flag
-        movedOneGrid = true;
-
-        // Reset the distance moved
-        movedDistance = 0.0;
-    }
-
     return;
 }
 
+void startTracking(int targetGrids) {
+    movedDistance = 0; // Reset the distance moved
+    targetGridNumber = targetGrids; // set the target number of grids
+    completeMovement = false;
+    return;
+}
+
+uint32_t getGridsMoved()
+{
+    encoderCallback(); // Calculate final movedDistancce
+
+    uint32_t grids_moved = movedDistance / 14;
+    printf("DISTANCE TRAVELLED: %.2lf\n", movedDistance);
+
+    // Reset the distance moved
+    movedDistance = 0.0;
+
+    return grids_moved;
+}
+
 // Function to count each encoder's pulse
-void encoderPulse(uint gpio) {
+void encoderPulse(uint gpio)
+{
     // L encoder interrupted
-    if (gpio == L_ENCODER_OUT) {
+    if (gpio == L_ENCODER_OUT)
+    {
         pulseCountL++;
-    } 
+    }
     // R encoder interrupted
-    else if (gpio == R_ENCODER_OUT) {
+    else if (gpio == R_ENCODER_OUT)
+    {
         pulseCountR++;
     }
+
+    oscillation++;
 }
 
 // Function to interrupt every second
-bool encoderCallback() {
+bool encoderCallback()
+{
     // Call getSpeedAndDistance function every second
-    getSpeedAndDistance(0, pulseCountL, &totalDistanceL);
-    getSpeedAndDistance(1, pulseCountR, &totalDistanceR);
+    getSpeedAndDistance(0, pulseCountL);
+    getSpeedAndDistance(1, pulseCountR);
 
     // Reset the pulse counts
     pulseCountL = 0;
     pulseCountR = 0;
 
+    if (targetGridNumber > 0) {
+        uint32_t grids_moved = movedDistance / 15.5;
+        if (grids_moved >= targetGridNumber) {
+            targetGridNumber = 0; // Reset target number of grids
+            movedDistance = 0; // Reset moved distance
+            completeMovement = true; // Set flag to indicate target number of grids reached
+        }
+    }
     return true;
 }
 
 // Function to initialize pins for encoders
-void initEncoderSetup() {
+void initEncoderSetup()
+{
     // Initialize GPIO pins for L encoder
     gpio_init(L_ENCODER_POW);
     gpio_init(L_ENCODER_OUT);

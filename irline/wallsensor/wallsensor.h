@@ -5,7 +5,7 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 
-extern volatile bool wallDetected;
+// extern volatile bool wallDetected;
 
 // Macros for pin configurations
 #define LEFT_IR_PIN 27
@@ -13,5 +13,6 @@ extern volatile bool wallDetected;
 
 // Functions for wall sensors
 void init_wallsensors();
+bool isWallDetected();
 
 #endif

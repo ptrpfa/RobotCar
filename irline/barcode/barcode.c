@@ -279,7 +279,7 @@ void read_barcode() {
 }
 
 // Interrupt callback function
-void interrupt_callback(uint gpio, uint32_t events) {
+void barcode_callback(uint gpio, uint32_t events) {
     // Ensure that the time difference between current time and last button press is not within the debounce delay threshold
     if((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS && gpio == 18) {
         barcode_scan = true;
@@ -311,13 +311,11 @@ void init_barcode() {
     // Initialise standard I/O
     // stdio_init_all();
 
-    printf("before setting pin\n");
     // Setup barcode pin
     setup_barcode_pin();
 
-    printf("before setting interrupt\n");
     // Enable interrupt on specified pin upon a rising or falling edge
-    gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
+    // gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
 }
 
 // Program entrypoint

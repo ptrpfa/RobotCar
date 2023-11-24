@@ -132,11 +132,29 @@ void stopMotor() {
     gpio_put(R_MOTOR_ENB, 0);
 }
 
+// Function to move forward for a set number of grids
+void moveGrids(int number_of_grids) {
+    startTracking(number_of_grids);
+
+    moveMotor(pwmL, pwmR);
+    while (!completeMovement) {
+        // wait
+    }
+
+    // Stop once reached target grids
+    stopMotor();
+}
 // Function to turn
 // 0 - left, 1 - right 
 void turnMotor(int direction) {
     // pwm_set_chan_level(pwm_gpio_to_slice_num(L_MOTOR_ENA), pwm_gpio_to_channel(L_MOTOR_ENA), pwm);
     // pwm_set_chan_level(pwm_gpio_to_slice_num(R_MOTOR_ENB), pwm_gpio_to_channel(R_MOTOR_ENB), pwm);
+
+    oscillation = 0;
+
+
+    int targetNotchCount = 305 * ENCODER_NOTCH / 360;
+    moveMotor(3125, 3125); 
 
     // Motor to turn left 
     if (direction == 0) {
@@ -162,12 +180,17 @@ void turnMotor(int direction) {
         gpio_put(L_MOTOR_ENA, 1);
         gpio_put(R_MOTOR_ENB, 1);
     }
+
+    while (oscillation < targetNotchCount) {
+        // wait
+    }
+
+    stopMotor();
 }
 
 // Function to compute PID control signal
 float compute_pid(float setpoint, float current_value, float *integral, float *prev_error) {
     float error = setpoint - current_value;
-    printf("current value: %f\n", current_value);
     
     *integral += error;
     
@@ -191,17 +214,12 @@ float map_pid_to_pwm(float control_signal) {
 // Call this function at a regular interval, e.g., every 100ms
 void update_motor_speed() {
     // Compute the control signals
-    printf("\nInside update_motor_speed:\n");
-
     float control_signal_L = compute_pid(setpoint_speed, actual_speed_L, &integral_L, &prev_error_L);
     float control_signal_R = compute_pid(setpoint_speed, actual_speed_R, &integral_R, &prev_error_R);
 
     // Convert the control signals to PWM values
     pwmL = map_pid_to_pwm(control_signal_L);
     pwmR = map_pid_to_pwm(control_signal_R);
-    printf("left pwm mapped: %f, right pwm mapped: %f\n", pwmL, pwmR);
-    //moveMotor(pwmL, pwmR); 
-
 }
 
 /*
