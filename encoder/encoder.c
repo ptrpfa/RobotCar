@@ -36,8 +36,9 @@ void getSpeedAndDistance(int encoder, uint32_t pulseCount)
     return;
 }
 
-void startTracking(int targetGrids) {
-    movedDistance = 0; // Reset the distance moved
+void startTracking(int targetGrids)
+{
+    movedDistance = 0;              // Reset the distance moved
     targetGridNumber = targetGrids; // set the target number of grids
     completeMovement = false;
     return;
@@ -84,11 +85,13 @@ bool encoderCallback()
     pulseCountL = 0;
     pulseCountR = 0;
 
-    if (targetGridNumber > 0) {
+    if (targetGridNumber > 0)
+    {
         uint32_t grids_moved = movedDistance / 15.5;
-        if (grids_moved >= targetGridNumber) {
-            targetGridNumber = 0; // Reset target number of grids
-            movedDistance = 0; // Reset moved distance
+        if (grids_moved >= targetGridNumber)
+        {
+            targetGridNumber = 0;    // Reset target number of grids
+            movedDistance = 0;       // Reset moved distance
             completeMovement = true; // Set flag to indicate target number of grids reached
         }
     }
@@ -120,7 +123,6 @@ void initEncoderSetup()
 
     // Set GPIO settings for R encoder
     gpio_pull_up(R_ENCODER_OUT);
-    // gpio_set_irq_enabled_with_callback(R_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &encoderPulse);
 
     // Enable the POW pins
     gpio_put(L_ENCODER_POW, 1);

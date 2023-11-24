@@ -7,7 +7,8 @@
 #define LEFT_IR_PIN 26  // Digital
 
 // Function to initialise ir line sensors
-void init_wallsensors() {
+void init_wallsensors()
+{
     // Initialize specified pins as input with a pull-up resistor
     gpio_init(LEFT_IR_PIN);
     gpio_init(RIGHT_IR_PIN);
@@ -17,8 +18,9 @@ void init_wallsensors() {
     gpio_pull_up(RIGHT_IR_PIN);
 }
 
-bool isWallDetected() {
-    return !gpio_get(LEFT_IR_PIN) && !gpio_get(RIGHT_IR_PIN);
+bool isWallDetected()
+{
+    return gpio_get(LEFT_IR_PIN);
 }
 
 /*
