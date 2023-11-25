@@ -42,7 +42,8 @@ Our project is focussed on the development of an autonomous two-wheeled robot ca
 
 ### Program Design
 ---
-Our project comprises of 7 components, each catered for a particular sensor/aspect of the car:
+Our project comprises of 8 components, each catered for a particular sensor/aspect of the car:
+- Main (program entrypoint for car to start executions)
 - Navigation and Mapping
 - Wifi
 - Motor
@@ -50,6 +51,9 @@ Our project comprises of 7 components, each catered for a particular sensor/aspe
 - IRLine (for barcode decoding)
 - Encoder (for car movement)
 - Magnetometer (for car direction tracking)
+
+The block diagram of the Raspberry Pi Pico W's GPIO pins is illustrated below:
+![Block Diagram](docs/block_diagram.png)
 
 In this section, we will go over the modular design of the car..
 
