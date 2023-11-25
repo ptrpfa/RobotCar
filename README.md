@@ -52,11 +52,11 @@ In this section, we will go over the block diagram and modular design of the car
 - Encoder (for car movement)
 - Magnetometer (for car direction tracking)
 
-**Block Diagram**
+**Block Diagram** <br>
 The block diagram for the robot car is illustrated below. The diagram provides a high-level overview of how the car will be initialised and start up the various components. More details on each part will be provided in the individual flowchart diagrams.
 ![Block Diagram](docs/diagrams/block_diagram.png)
 
-**Flowchart Diagram**
+**Flowchart Diagram** <br>
 As previously illustrated, the car comprises of many components which each need to be initialised and set up on its own (e.g interrupts, callback functions etc). The individual flowcharts for each component are illustrated below.
 
 Firstly, the main function will be the program entrypoint of the robot car. Its inner workings are illustrated below:
