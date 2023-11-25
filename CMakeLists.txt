@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.12)
 # Pull in SDK (must be before project)
 include(pico_sdk_import.cmake)
 include(pico_extras_import_optional.cmake)
-
+include(FreeRTOS_Kernel_import.cmake)
 
 project(INF2004_TEAM18 C CXX ASM)
 set(CMAKE_C_STANDARD 11)
@@ -17,8 +17,6 @@ endif()
 # Initialize the SDK
 pico_sdk_init()
 
-include(FreeRTOS_Kernel_import.cmake)
-
 if (NOT PICO_NO_HARDWARE)
     add_subdirectory(main)
     add_subdirectory(motor)
@@ -28,4 +26,3 @@ if (NOT PICO_NO_HARDWARE)
     add_subdirectory(encoder)
     add_subdirectory(magnetometer)
 endif ()
-    
