@@ -68,7 +68,7 @@ void checkIfVisited(int x, int y)
     }
 }
 
-bool checkIfCellIsVisited(int current_x, int current_y, int number_of_turns)
+int checkIfCellIsVisited(int current_x, int current_y, int number_of_turns)
 {
     int new_position = position + number_of_turns;
 
@@ -119,7 +119,7 @@ void updatePosition(int turn)
 }
 
 // Return wall status
-bool wallIsChecked(int current_x, int current_y, int number_of_turns)
+int wallIsChecked(int current_x, int current_y, int number_of_turns)
 {
     int new_position = number_of_turns + position;
 
@@ -128,7 +128,7 @@ bool wallIsChecked(int current_x, int current_y, int number_of_turns)
         new_position -= 4;
     }
 
-    printf("NEW POSITION TO CHECK: %d", new_position);
+    printf("NEW POSITION TO CHECK: %d\n", new_position);
     int wall_status;
     switch (new_position)
     {
@@ -211,69 +211,67 @@ void firstPathAlgo(int current_x, int current_y)
 
     // Start facing south and move
 
-    if (!isWallDetected())
+    add_repeating_timer_ms(100, pid_update_callback, NULL, &pid_timer);
+    leftWallDetected = false;
+    moveMotor(pwmL, pwmR);
+    while (!leftWallDetected && !obstacleDetected)
     {
-        add_repeating_timer_ms(100, pid_update_callback, NULL, &pid_timer);
-        moveMotor(pwmL, pwmR);
-        while (!leftWallDetected && !obstacleDetected)
-        {
-            // Wait
-        }
-        cancel_repeating_timer(&pid_timer);
-
-        // Encountered wall, stop
-        stopMotor();
-        leftWallDetected = false;
-
-        uint32_t grids_moved = getGridsMoved();
-        printf("GRIDS MOVED: %d\n", grids_moved);
-        sleep_ms(2000);
-
-        switch (position)
-        {
-        // South
-        case 0:
-            for (int i = 0; i < grids_moved; i++)
-            {
-                updateWall(0, current_x, current_y, 0);
-                current_y--;
-            }
-            break;
-        // West
-        case 1:
-            for (int i = 0; i < grids_moved; i++)
-            {
-                updateWall(0, current_x, current_y, 1);
-                current_x--;
-            }
-            break;
-        // North
-        case 2:
-            for (int i = 0; i < grids_moved; i++)
-            {
-                updateWall(0, current_x, current_y, 2);
-                current_y++;
-            }
-            break;
-        // East
-        case 3:
-            for (int i = 0; i < grids_moved; i++)
-            {
-                updateWall(0, current_x, current_y, 3);
-                current_x++;
-            }
-            break;
-        }
-
-        // Update mazegrid
-        updateWall(1, current_x, current_y, position);
+        // Wait
     }
+    cancel_repeating_timer(&pid_timer);
+
+    // Encountered wall, stop
+    stopMotor();
+    leftWallDetected = false;
+
+    uint32_t grids_moved = getGridsMoved();
+    printf("GRIDS MOVED: %d\n", grids_moved);
+    sleep_ms(2000);
+
+    switch (position)
+    {
+    // South
+    case 0:
+        for (int i = 0; i < grids_moved; i++)
+        {
+            updateWall(0, current_x, current_y, 0);
+            current_y--;
+        }
+        break;
+    // West
+    case 1:
+        for (int i = 0; i < grids_moved; i++)
+        {
+            updateWall(0, current_x, current_y, 1);
+            current_x--;
+        }
+        break;
+    // North
+    case 2:
+        for (int i = 0; i < grids_moved; i++)
+        {
+            updateWall(0, current_x, current_y, 2);
+            current_y++;
+        }
+        break;
+    // East
+    case 3:
+        for (int i = 0; i < grids_moved; i++)
+        {
+            updateWall(0, current_x, current_y, 3);
+            current_x++;
+        }
+        break;
+    }
+
+    // Update mazegrid
+    updateWall(1, current_x, current_y, position);
 
     // Check if wall 90 degrees to the right is checked
     if (wallIsChecked(current_x, current_y, 1) == -1)
     {
+        printf("TURNING RIGHT\n");
         // Turn right
-        sleep_ms(2000);
         turnMotor(1);
         sleep_ms(2000);
 
@@ -341,17 +339,11 @@ void firstPathAlgo(int current_x, int current_y)
                         updatePosition(1);
                         sleep_ms(2000);
                     }
-
-                    // Recursive
-                    firstPathAlgo(current_x, current_y);
                 }
                 else
                 {
                     // No wall
                     updateWall(0, current_x, current_y, position);
-
-                    // Recursive
-                    firstPathAlgo(current_x, current_y);
                 }
             }
             else
@@ -359,13 +351,12 @@ void firstPathAlgo(int current_x, int current_y)
                 if (wallIsChecked(current_x, current_y, 2) == 0)
                 {
                     // No wall; check if cell is visited
-                    if (checkIfCellIsVisited(current_x, current_y, 2))
+                    if (checkIfCellIsVisited(current_x, current_y, 2) > 0)
                     {
                         // Turn right and backtrack
                         turnMotor(1);
                         updatePosition(1);
                         sleep_ms(2000);
-                        firstPathAlgo(current_x, current_y);
                     }
                     else
                     {
@@ -374,8 +365,6 @@ void firstPathAlgo(int current_x, int current_y)
                         turnMotor(1);
                         updatePosition(2);
                         sleep_ms(2000);
-
-                        firstPathAlgo(current_x, current_y);
                     }
                 }
                 else
@@ -384,7 +373,6 @@ void firstPathAlgo(int current_x, int current_y)
                     turnMotor(1);
                     updatePosition(1);
                     sleep_ms(2000);
-                    firstPathAlgo(current_x, current_y);
                 }
             }
         }
@@ -392,44 +380,127 @@ void firstPathAlgo(int current_x, int current_y)
         {
             // No wall
             updateWall(0, current_x, current_y, position);
-
-            // Recursive
-            firstPathAlgo(current_x, current_y);
         }
     }
-    else
+    else if (wallIsChecked(current_x, current_y, 1) == 0)
     {
-        if (wallIsChecked(current_x, current_y, 1) == 0)
+        // No wall; check if cell is visited
+        if (checkIfCellIsVisited(current_x, current_y, 1) > 0)
         {
-            // No wall; check if cell is visited
-            if (checkIfCellIsVisited(current_x, current_y, 1))
+            // Cell is visited already
+            // Check left
+            if (wallIsChecked(current_x, current_y, 3) == 0)
             {
-                // Turn right and backtrack
-                turnMotor(1);
-                updatePosition(1);
+                // No wall, check if visited
+                if (checkIfCellIsVisited(current_x, current_y, 3) > 0)
+                {
+                    // Cell is visited already, Uturn and backtrack
+                    turnMotor(1);
+                    turnMotor(1);
+                    updatePosition(2);
+                    sleep_ms(2000);
+                }
+                else
+                {
+                    // Cell not visited yet, turn left and recursive
+                    turnMotor(0);
+                    updatePosition(3);
+                    sleep_ms(2000);
+                }
+            }
+            else if (wallIsChecked(current_x, current_y, 3) == -1)
+            {
+                // Turn left and check for wall
+                turnMotor(0);
+                updatePosition(3);
                 sleep_ms(2000);
-                firstPathAlgo(current_x, current_y);
+                if (isWallDetected())
+                {
+                    updateWall(1, current_x, current_y, position);
+                    // Theres a wall, turn left again and backtrack
+                    turnMotor(0);
+                    updatePosition(3);
+                    sleep_ms(2000);
+                }
+                else
+                {
+                    // No wall,
+                    updateWall(0, current_x, current_y, position);
+                }
             }
             else
             {
-                // Turn 180
+                // Theres a wall on the left, uturn and backtrack
                 turnMotor(1);
                 turnMotor(1);
                 updatePosition(2);
                 sleep_ms(2000);
-
-                firstPathAlgo(current_x, current_y);
             }
         }
         else
         {
-            // Turn right and backtrack
+            // Right no wall and not visited
+            // Turn right and recursive
             turnMotor(1);
             updatePosition(1);
             sleep_ms(2000);
-            firstPathAlgo(current_x, current_y);
         }
     }
+    else
+    {
+        // Theres a wall on the right
+        // Check left
+        if (wallIsChecked(current_x, current_y, 3) == 0)
+        {
+            // No wall, check if visited
+            if (checkIfCellIsVisited(current_x, current_y, 3) > 0)
+            {
+                // Cell is visited already, Uturn and backtrack
+                turnMotor(1);
+                turnMotor(1);
+                updatePosition(2);
+                sleep_ms(2000);
+            }
+            else
+            {
+                // Cell not visited yet, turn left and recursive
+                turnMotor(0);
+                updatePosition(3);
+                sleep_ms(2000);
+            }
+        }
+        else if (wallIsChecked(current_x, current_y, 3) == -1)
+        {
+            // Turn left and check for wall
+            turnMotor(0);
+            updatePosition(3);
+            sleep_ms(2000);
+            if (isWallDetected())
+            {
+                updateWall(1, current_x, current_y, position);
+                // Theres a wall, turn left again and backtrack
+                turnMotor(0);
+                updatePosition(3);
+                sleep_ms(2000);
+            }
+            else
+            {
+                // No wall,
+                updateWall(0, current_x, current_y, position);
+            }
+        }
+        else
+        {
+            // Theres a wall on the left, uturn and backtrack
+            turnMotor(1);
+            turnMotor(1);
+            updatePosition(2);
+            sleep_ms(2000);
+        }
+    }
+
+    // Recursive
+    firstPathAlgo(current_x, current_y);
 
     sleep_ms(2000);
 

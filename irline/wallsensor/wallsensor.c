@@ -20,6 +20,14 @@ void init_wallsensors()
 
 bool isWallDetected()
 {
+    if (gpio_get(LEFT_IR_PIN))
+    {
+        printf("WALL DETECTED\n");
+    }
+    else
+    {
+        printf("NO WALL\n");
+    }
     return gpio_get(LEFT_IR_PIN);
 }
 
