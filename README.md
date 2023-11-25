@@ -42,7 +42,7 @@ Our project is focussed on the development of an autonomous two-wheeled robot ca
 
 ### Program Design
 ---
-Our project comprises of 8 components, each catered for a particular sensor/aspect of the car:
+In this section, we will go over the block diagram and modular design of the car. Our project comprises of 8 components, each catered for a particular sensor/aspect of the car:
 - Main (program entrypoint for car to start executions)
 - Navigation and Mapping
 - Wifi
@@ -52,10 +52,38 @@ Our project comprises of 8 components, each catered for a particular sensor/aspe
 - Encoder (for car movement)
 - Magnetometer (for car direction tracking)
 
-The block diagram of the Raspberry Pi Pico W's GPIO pins is illustrated below:
-![Block Diagram](docs/block_diagram.png)
+**Block Diagram**
+The block diagram for the robot car is illustrated below. The diagram provides a high-level overview of how the car will be initialised and start up the various components. More details on each part will be provided in the individual flowchart diagrams.
+![Block Diagram](docs/diagrams/block_diagram.png)
 
-In this section, we will go over the modular design of the car..
+**Flowchart Diagram**
+As previously illustrated, the car comprises of many components which each need to be initialised and set up on its own (e.g interrupts, callback functions etc). The individual flowcharts for each component are illustrated below.
+
+Firstly, the main function will be the program entrypoint of the robot car. Its inner workings are illustrated below:
+![Main Flowchart](docs/diagrams/flowchart/main.png)
+
+The other components' flowcharts are illustrated below, in no particular execution order:
+
+*First Path* <br>
+![First Path Flowchart](docs/diagrams/flowchart/first_path.png)
+
+*Update Wall* <br>
+![Update Wall Flowchart](docs/diagrams/flowchart/update_wall.png)
+
+*Maze (Map) Grid* <br>
+![Maze Grid Flowchart](docs/diagrams/flowchart/initialise_maze_grid.png)
+
+*PID Controller* <br>
+![PID Controller Flowchart](docs/diagrams/flowchart/pid.png)
+
+*Barcode Decoding* <br>
+![Barcode Flowchart](docs/diagrams/flowchart/barcode.png)
+
+*Ultrasonic (Obstactle Detection)* <br>
+![Ultrasonic Flowchart](docs/diagrams/flowchart/ultrasonic.png)
+
+*Magnetometer* <br>
+![Magnetometer Flowchart](docs/diagrams/flowchart/magnetometer.png)
 
 ### Component List
 ---
@@ -82,6 +110,9 @@ In this section, we will go over the modular design of the car..
 - Mounting Plates
 - Nuts and Bolts
 - Jumper Cables (M-M, F-F, M-F)
+
+**Wiring Diagram**
+![Block Diagram](docs/diagrams/wiring_diagram.png)
 
 ### Getting Started
 ---
