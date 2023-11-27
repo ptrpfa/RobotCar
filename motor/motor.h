@@ -23,6 +23,7 @@ extern volatile float pwmR;
 void initMotorSetup();
 void initMotorPWM();
 void moveMotor(float pwmL , float pwmR);
+void reverseMotor(float pwmL, float pwmR);
 void stopMotor();
 void turnMotor(int direction);
 void update_motor_speed();

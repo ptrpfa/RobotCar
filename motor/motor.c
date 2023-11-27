@@ -119,6 +119,26 @@ void moveMotor(float new_pwmL, float new_pwmR)
     gpio_put(R_MOTOR_ENB, 1);
 }
 
+// Function to move backward
+void reverseMotor(float new_pwmL, float new_pwmR)
+{
+    stopMotor();
+    sleep_ms(50);
+
+    pwm_set_chan_level(pwm_gpio_to_slice_num(L_MOTOR_ENA), pwm_gpio_to_channel(L_MOTOR_ENA), new_pwmL);
+    pwm_set_chan_level(pwm_gpio_to_slice_num(R_MOTOR_ENB), pwm_gpio_to_channel(R_MOTOR_ENB), new_pwmR);
+
+    // Turn on both motors
+    gpio_put(L_MOTOR_IN1, 1);
+    gpio_put(L_MOTOR_IN2, 0);
+    gpio_put(R_MOTOR_IN3, 1);
+    gpio_put(R_MOTOR_IN4, 0);
+
+    // Enable the enable pins
+    gpio_put(L_MOTOR_ENA, 1);
+    gpio_put(R_MOTOR_ENB, 1);
+}
+
 // Function to stop
 void stopMotor()
 {
@@ -147,6 +167,7 @@ void moveGrids(int number_of_grids)
     // Stop once reached target grids
     stopMotor();
 }
+
 // Function to turn
 // 0 - left, 1 - right
 void turnMotor(int direction)
@@ -156,8 +177,8 @@ void turnMotor(int direction)
 
     oscillation = 0;
 
-    int targetNotchCount = 170 * ENCODER_NOTCH / 360;
-    moveMotor(3125, 3125);
+    int targetNotchCount = 140 * ENCODER_NOTCH / 360;
+    moveMotor(1900, 1900);
 
     // Motor to turn left
     if (direction == 0)
