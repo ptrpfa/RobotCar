@@ -47,8 +47,9 @@ int main()
     // Initialise ultrasonic sensor
     setupUltrasonicPins();
     kalman_state *state = kalman_init(1, 100, 0, 0);
-    sleep_ms(1000);
+    sleep_ms(10000);
 
+    isMazeMapped = true;
     double cm;
 
     while (1)

@@ -4,6 +4,7 @@
 
 const char *ssi_tags[] = {"volt", "temp", "led", "width", "height", "grid1", "grid2", "grid3", "grid4", "grid5", "bc"};
 char formatted_map[5][192];
+bool isMazeMapped = false;
 
 void format_maze()
 {
@@ -98,37 +99,73 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen)
   break;
   case 5: // grid1
   {
-    printed = snprintf(pcInsert, iInsertLen, formatted_map[0]);
-    printf(formatted_map[0]);
+    if (isMazeMapped)
+    {
+
+      printed = snprintf(pcInsert, iInsertLen, formatted_map[0]);
+    }
+    else
+    {
+      printed = snprintf(pcInsert, iInsertLen, "");
+    }
   }
   break;
   case 6: // grid2
   {
-    printed = snprintf(pcInsert, iInsertLen, formatted_map[1]);
-    printf(formatted_map[1]);
+    if (isMazeMapped)
+    {
+
+      printed = snprintf(pcInsert, iInsertLen, formatted_map[1]);
+    }
+    else
+    {
+      printed = snprintf(pcInsert, iInsertLen, "");
+    }
   }
   break;
   case 7: // grid3
   {
-    printed = snprintf(pcInsert, iInsertLen, formatted_map[2]);
-    printf(formatted_map[2]);
+    if (isMazeMapped)
+    {
+
+      printed = snprintf(pcInsert, iInsertLen, formatted_map[2]);
+    }
+    else
+    {
+      printed = snprintf(pcInsert, iInsertLen, "");
+    }
   }
   break;
   case 8: // grid4
   {
-    printed = snprintf(pcInsert, iInsertLen, formatted_map[3]);
-    printf(formatted_map[3]);
+    if (isMazeMapped)
+    {
+
+      printed = snprintf(pcInsert, iInsertLen, formatted_map[3]);
+    }
+    else
+    {
+      printed = snprintf(pcInsert, iInsertLen, "");
+    }
   }
   break;
   case 9: // grid5
   {
-    printed = snprintf(pcInsert, iInsertLen, formatted_map[4]);
-    printf(formatted_map[4]);
+    if (isMazeMapped)
+    {
+
+      printed = snprintf(pcInsert, iInsertLen, formatted_map[4]);
+    }
+    else
+    {
+      printed = snprintf(pcInsert, iInsertLen, "");
+    }
   }
   break;
   case 10: // bc
   {
-    printed = snprintf(pcInsert, iInsertLen, "%c", barcode_char);
+    // printed = snprintf(pcInsert, iInsertLen, "%c", barcode_char);
+    printed = snprintf(pcInsert, iInsertLen, "%c", 'K');
   }
   break;
   default:

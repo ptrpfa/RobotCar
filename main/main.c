@@ -25,11 +25,6 @@
 #define ENDING_X 2
 #define ENDING_Y 0
 
-struct Node
-{
-
-}
-
 // Struct for maze cell
 struct Cell
 {
@@ -134,7 +129,7 @@ int checkIfCellIsVisited(int current_x, int current_y, int number_of_turns)
         break;
     }
     // Cell is invalid, return true so car won't go there
-    return true;
+    return 1;
 }
 
 void updatePosition(int turn)
@@ -264,7 +259,7 @@ void firstPathAlgo(int current_x, int current_y)
     rightWallDetected = false;
     obstacleDetected = false;
 
-    while (!(leftWallDetected && rightWallDetected) && !obstacleDetected)
+    while (!(leftWallDetected && rightWallDetected) && !obstacleDetected && (checkIfCellIsVisited(current_x, current_y, 0) == 0))
     {
         moveMotor(pwmL, pwmR);
         // Constantly check if barcode detected
@@ -333,6 +328,7 @@ void firstPathAlgo(int current_x, int current_y)
         updateWall(1, current_x, current_y, position);
     }
 
+    // Reset flags
     leftWallDetected = false;
     rightWallDetected = false;
     obstacleDetected = false;
@@ -416,34 +412,33 @@ void firstPathAlgo(int current_x, int current_y)
                     updateWall(0, current_x, current_y, position);
                 }
             }
-            else
+            else if (wallIsChecked(current_x, current_y, 2) == 0)
             {
-                if (wallIsChecked(current_x, current_y, 2) == 0)
-                {
-                    // No wall; check if cell is visited
-                    if (checkIfCellIsVisited(current_x, current_y, 2) > 0)
-                    {
-                        // Turn right and backtrack
-                        turnMotor(1);
-                        updatePosition(1);
-                        sleep_ms(2000);
-                    }
-                    else
-                    {
-                        // Turn 180
-                        turnMotor(1);
-                        turnMotor(1);
-                        updatePosition(2);
-                        sleep_ms(2000);
-                    }
-                }
-                else
+                // No wall; check if cell is visited
+                if (checkIfCellIsVisited(current_x, current_y, 2) > 0)
                 {
                     // Turn right and backtrack
                     turnMotor(1);
                     updatePosition(1);
                     sleep_ms(2000);
                 }
+                else
+                {
+                    // Turn 180
+                    turnMotor(1);
+                    turnMotor(1);
+                    updatePosition(2);
+                    sleep_ms(2000);
+                }
+            }
+            else
+            {
+                // Theres a wall opposite
+                // DEAD END
+                // Turn right and backtrack
+                turnMotor(1);
+                updatePosition(1);
+                sleep_ms(2000);
             }
         }
         else
@@ -571,8 +566,6 @@ void firstPathAlgo(int current_x, int current_y)
 
     // Recursive
     firstPathAlgo(current_x, current_y);
-
-    sleep_ms(2000);
 
     printf("STATUS CHECK\n");
     printf("SOUTHWALL: %d\n", mazeGrid[current_x][current_y].southWall);

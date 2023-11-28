@@ -19,8 +19,7 @@ uint64_t scanned_timings[CODE_LENGTH] = {0}; // Array to store the time it took 
 uint16_t count_scanned_bar = 0;              // Count of number of bars scanned
 uint16_t count_scanned_char = 0;             // Count of number of characters scanned, used to get target character between delimiters
 char scanned_code[CODE_LENGTH + 1] = "";     // String to store scanned barcode binary representation
-// char barcode_char = ERROR_CHAR;
-char barcode_char = 'K';
+char barcode_char = ERROR_CHAR;
 
 /* Function Definitions */
 // Function to setup barcode pin to digital

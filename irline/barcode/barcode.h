@@ -22,7 +22,7 @@ void read_barcode();                               // Function to read from ADC
 void barcode_callback(uint gpio, uint32_t events); // Interrupt callback function
 void init_barcode();
 
-extern char barcode_char;       // Character variable to store scanned and parsed barcode character
-extern volatile barcode_update; // Boolean to indicate when barcode char is updated
+extern char barcode_char;            // Character variable to store scanned and parsed barcode character
+extern volatile bool barcode_update; // Boolean to indicate when barcode char is updated
 
 #endif
