@@ -70,24 +70,14 @@ struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
 };
 
 // Struct to represent a point in the maze
-struct Point
+struct Coordinates
 {
     int x;
     int y;
 };
 
-// Function to print the path
-void printPath(struct Point path[], int length)
-{
-    for (int i = 0; i < length; ++i)
-    {
-        printf("(%d, %d) ", path[i].x, path[i].y);
-    }
-    printf("\n");
-}
-
 // Recursive function to find the shortest path
-void findShortestPath(int x, int y, int end_x, int end_y, struct Point path[], int pathLength, int *minPathLength, struct Point *minPath)
+void navigateMaze(int x, int y, int end_x, int end_y, struct Coordinates path[], int pathLength, int *shortest_path_length, struct Coordinates *shortest_path)
 {
     // Base Condition
     if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT || mazeGrid[x][y].nav_visited == 1)
@@ -106,12 +96,12 @@ void findShortestPath(int x, int y, int end_x, int end_y, struct Point path[], i
     if (x == end_x && y == end_y)
     {
         // If the current path is shorter than the previously found minimum path, update the minimum path
-        if (pathLength < *minPathLength)
+        if (pathLength < *shortest_path_length)
         {
-            *minPathLength = pathLength;
+            *shortest_path_length = pathLength;
             for (int i = 0; i <= pathLength; ++i)
             {
-                minPath[i] = path[i];
+                shortest_path[i] = path[i];
             }
         }
         return;
@@ -121,22 +111,22 @@ void findShortestPath(int x, int y, int end_x, int end_y, struct Point path[], i
     if (mazeGrid[x][y].northWall == 0 && mazeGrid[x][y].visited != 2)
     { // No north wall
         // Move north
-        findShortestPath(x, y - 1, end_x, end_y, path, pathLength + 1, minPathLength, minPath);
+        navigateMaze(x, y - 1, end_x, end_y, path, pathLength + 1, shortest_path_length, shortest_path);
     }
     if (mazeGrid[x][y].southWall == 0 && mazeGrid[x][y].visited != 2)
     { // No south wall
         // Move south
-        findShortestPath(x, y + 1, end_x, end_y, path, pathLength + 1, minPathLength, minPath);
+        navigateMaze(x, y + 1, end_x, end_y, path, pathLength + 1, shortest_path_length, shortest_path);
     }
     if (mazeGrid[x][y].eastWall == 0 && mazeGrid[x][y].visited != 2)
     { // No east wall
         // Move east
-        findShortestPath(x + 1, y, end_x, end_y, path, pathLength + 1, minPathLength, minPath);
+        navigateMaze(x + 1, y, end_x, end_y, path, pathLength + 1, shortest_path_length, shortest_path);
     }
     if (mazeGrid[x][y].westWall == 0 && mazeGrid[x][y].visited != 2)
     { // No west wall
         // Move west
-        findShortestPath(x - 1, y, end_x, end_y, path, pathLength + 1, minPathLength, minPath);
+        navigateMaze(x - 1, y, end_x, end_y, path, pathLength + 1, shortest_path_length, shortest_path);
     }
 
     // Backtrack: Mark the current point as unvisited when exploring other paths
@@ -145,20 +135,23 @@ void findShortestPath(int x, int y, int end_x, int end_y, struct Point path[], i
 
 int main()
 {
-    // Initialize path variables
-    struct Point path[MAZE_WIDTH * MAZE_HEIGHT];
+    // Initialize exploration path variables
+    struct Coordinates path[MAZE_WIDTH * MAZE_HEIGHT];
     int pathLength = 0;
 
     // Initialize variables to store the minimum path
-    int minPathLength = MAZE_WIDTH * MAZE_HEIGHT + 1; // Initialize to a value greater than the maximum possible path length
-    struct Point minPath[MAZE_WIDTH * MAZE_HEIGHT];
+    int shortest_path_length = MAZE_WIDTH * MAZE_HEIGHT + 1; // Initialize to a value greater than the maximum possible path length
+    struct Coordinates shortest_path[MAZE_WIDTH * MAZE_HEIGHT];
 
     // Find the shortest path using DFS
-    findShortestPath(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y, path, pathLength, &minPathLength, minPath);
+    navigateMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y, path, pathLength, &shortest_path_length, shortest_path);
 
     // Print the shortest path
-    printf("Shortest Path: ");
-    printPath(minPath, minPathLength);
+    printf("Shortest Path:\n");
+    for (int i = 0; i < shortest_path_length + 1; ++i)
+    {
+        printf("(%d, %d)\n", shortest_path[i].x, shortest_path[i].y);
+    }
 
     return 0;
 }
