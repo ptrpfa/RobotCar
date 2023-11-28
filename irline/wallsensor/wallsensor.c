@@ -20,12 +20,10 @@ bool isWallDetected()
     if (gpio_get(LEFT_IR_PIN) && gpio_get(RIGHT_IR_PIN))
     {
         printf("WALL DETECTED\n");
+        return true;
     }
-    else
-    {
-        printf("NO WALL\n");
-    }
-    return gpio_get(LEFT_IR_PIN) && gpio_get(RIGHT_IR_PIN);
+    printf("NO WALL\n");
+    return false;
 }
 
 /*

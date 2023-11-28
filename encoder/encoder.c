@@ -44,15 +44,18 @@ void startTracking(int targetGrids)
     return;
 }
 
-uint32_t getGridsMoved()
+uint32_t getGridsMoved(bool reset)
 {
     encoderCallback(); // Calculate final movedDistancce
 
     uint32_t grids_moved = movedDistance / 14;
     printf("DISTANCE TRAVELLED: %.2lf\n", movedDistance);
 
-    // Reset the distance moved
-    movedDistance = 0.0;
+    if (reset)
+    {
+        // Reset the distance moved
+        movedDistance = 0.0;
+    }
 
     return grids_moved;
 }

@@ -80,24 +80,23 @@ void navigateMaze(int x, int y, int end_x, int end_y)
     printf("(%d, %d)\n", x, y);
 
     // Try moving in all possible directions, checking for walls (NSEW)
-    if(mazeGrid[x][y].northWall == 0) { // No north wall
+    if(mazeGrid[x][y].northWall == 0 && mazeGrid[x][y].visited != 2) { // No north wall
         // Move north
         navigateMaze(x, y - 1, end_x, end_y); 
     }
-    if(mazeGrid[x][y].southWall == 0) { // No south wall
+    if(mazeGrid[x][y].southWall == 0 && mazeGrid[x][y].visited != 2) { // No south wall
         // Move south
         navigateMaze(x, y + 1, end_x, end_y); 
     }
-    if(mazeGrid[x][y].eastWall == 0) { // No east wall
+    if(mazeGrid[x][y].eastWall == 0 && mazeGrid[x][y].visited != 2) { // No east wall
         // Move east
         navigateMaze(x + 1, y, end_x, end_y); 
     }
-    if(mazeGrid[x][y].westWall == 0) { // No west wall
+    if(mazeGrid[x][y].westWall == 0 && mazeGrid[x][y].visited != 2) { // No west wall
         // Move west
         navigateMaze(x - 1, y, end_x, end_y); 
     }
 
-    
 }
 
 bool pidUpdateCallback(struct repeating_timer *t)
