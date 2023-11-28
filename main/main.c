@@ -24,6 +24,12 @@
 
 #define ENDING_X 2
 #define ENDING_Y 0
+
+struct Node
+{
+
+}
+
 // Struct for maze cell
 struct Cell
 {
@@ -55,6 +61,29 @@ int isValid(int x, int y)
     return x >= 0 && x < MAZE_WIDTH && y >= 0 && y < MAZE_HEIGHT;
 }
 
+void updateObstacle(int x, int y, int position)
+{
+    switch (position)
+    {
+    case 0: // South
+        mazeGrid[x][y + 1].visited = 2;
+        cellsLeft -= 1;
+        break;
+    case 1: // West
+        mazeGrid[x - 1][y].visited = 2;
+        cellsLeft -= 1;
+        break;
+    case 2: // North
+        mazeGrid[x][y - 1].visited = 2;
+        cellsLeft -= 1;
+        break;
+    case 3: // East
+        mazeGrid[x + 1][y].visited = 2;
+        cellsLeft -= 1;
+        break;
+    }
+    return;
+}
 void checkIfVisited(int x, int y)
 {
     if (mazeGrid[x][y].visited == 0 &&
@@ -214,7 +243,7 @@ void firstPathAlgo(int current_x, int current_y)
     add_repeating_timer_ms(100, pid_update_callback, NULL, &pid_timer);
     leftWallDetected = false;
     moveMotor(pwmL, pwmR);
-    while (!leftWallDetected && !obstacleDetected)
+    while (!(leftWallDetected && rightWallDetected) && !obstacleDetected)
     {
         // Wait
     }
@@ -223,9 +252,12 @@ void firstPathAlgo(int current_x, int current_y)
     // Encountered wall, stop
     stopMotor();
     leftWallDetected = false;
+    rightWallDetected = false;
+    obstacleDetected = false;
 
-    uint32_t grids_moved = getGridsMoved();
+    uint32_t grids_moved = getGridsMoved(true);
     printf("GRIDS MOVED: %d\n", grids_moved);
+
     sleep_ms(2000);
 
     switch (position)
@@ -265,7 +297,14 @@ void firstPathAlgo(int current_x, int current_y)
     }
 
     // Update mazegrid
-    updateWall(1, current_x, current_y, position);
+    if (obstacleDetected)
+    {
+        updateObstacle(current_x, current_y, position);
+    }
+    else
+    {
+        updateWall(1, current_x, current_y, position);
+    }
 
     // Check if wall 90 degrees to the right is checked
     if (wallIsChecked(current_x, current_y, 1) == -1)
@@ -512,161 +551,6 @@ void firstPathAlgo(int current_x, int current_y)
     return;
 }
 
-void hard_coded()
-{
-    turnMotor(1);
-    sleep_ms(1500);
-
-    // add_repeating_timer_ms(1000, pid_update_callback, NULL, &pid_timer);
-    moveMotor(pwmL, pwmR);
-    while (!wallDetected)
-    {
-        // Wait
-    }
-
-    // Encounterd wall, stop
-    stopMotor();
-    sleep_ms(1500);
-
-    turnMotor(0);
-    wallDetected = false;
-    sleep_ms(1500);
-
-    add_repeating_timer_ms(1000, pid_update_callback, NULL, &pid_timer);
-    moveMotor(pwmL, pwmR);
-    while (!wallDetected)
-    {
-        // Wait
-    }
-
-    // Encounterd wall, stop
-    stopMotor();
-    sleep_ms(1500);
-
-    turnMotor(0);
-    wallDetected = false;
-    sleep_ms(1500);
-
-    add_repeating_timer_ms(1000, pid_update_callback, NULL, &pid_timer);
-    moveMotor(pwmL, pwmR);
-    while (!wallDetected)
-    {
-        // Wait
-    }
-
-    // Encounterd wall, stop
-    stopMotor();
-    sleep_ms(1500);
-
-    turnMotor(1);
-    wallDetected = false;
-    sleep_ms(1500);
-}
-// Function to find the path using a flood-fill algorithm
-/*
-* OLD ALGO
-void firstPathAlgo() {
-    if (cellsLeft == 0) {
-        return;
-    }
-
-    // Reposition car to face S
-    if (position != 0) {
-        for(int i = position; i != 0; i--) {
-            turnMotor(0);
-            sleep_ms(525);
-            stopMotor();
-            sleep_ms(2000);
-        }
-
-        position = 0;
-    }
-
-    // Define the possible moves (S, W, N, E)
-    int dx[] = {0, -1, 0, 1};
-    int dy[] = {1, 0, -1, 0};
-
-    // Try all possible moves
-    for (int i = 0; i < 4; i++) {
-        int newX = mazeGrid + dx[i];
-        int newY = mazeGrid + dy[i];
-
-        // Check if the new position is valid
-        if (isValid(newX, newY)) {
-            wallDetected = false;
-            oneGrid = false;
-            bool action = false;
-
-            time_t startTime, currentTime;
-            double elapsedTime = 0;
-            startTime = time(NULL);
-
-            // Keep moving until a wall is detected or 1 grid space has past
-            while (!action) {
-                currentTime = time(NULL);
-                elapsedTime = difftime(currentTime, startTime);
-
-                // If past 1 sec without wall detected means successfully moved 1 grid
-                if (elapsedTime >= 0.85) {
-                    // Stop motor after moving 1 grid
-                    stopMotor();
-                    sleep_ms(2000);
-
-                    // Recursively explore the next cell
-                    firstPathAlgo(mazeGrid);
-
-                    // To break loop once returned
-                    action = true;
-                }
-                else if (wallDetected) {
-                    // Stop motor once wall detected
-                    stopMotor();
-                    sleep_ms(2000);
-
-                    // Turn to the right to check next cell
-                    moveMotor(pwmL,pwmR);
-                    turnMotor(1);
-                    sleep_ms(502);
-                    stopMotor();
-
-                    // Identify the direction tried to move and mark cell wall as blocked
-                    if (i == 0) {       // Tried to moved south
-                        mazeGrid[start.x][start.y].southWall = true;
-                    }
-                    else if (i == 1) {  // Tried to move west
-                        mazeGrid[start.x][start.y].westWall = true;
-                    }
-                    else if (i == 2) {  // Tried to move north
-                        mazeGrid[start.x][start.y].northWall = true;
-                    }
-                    else if (i == 3) {  // Tried to move east
-                        mazeGrid[start.x][start.y].eastWall = true;
-                    }
-
-                    // Set position to know how many turn rights were taken
-                    position += 1;
-
-                    // To break loop
-                    action = true;
-                }
-                // Else, not 1 sec yet and no wall detected, continue moving
-                else {
-                    moveMotor(pwmL,pwmR);
-                }
-            }
-        }
-        // New position is not valid or has been explored
-        else {
-            // Turn to the right
-            turnMotor(1);
-            sleep_ms(525);
-            stopMotor();
-            position += 1;
-        }
-    }
-}
-*/
-
 // Function that is invoked upon a change in right IR sensor's input
 void callbacks(uint gpio, uint32_t events)
 {
@@ -815,7 +699,7 @@ int main()
         if (startCar == 1)
         {
             // Call pathfinding algorithm
-            firstPathAlgo(STARTING_X, STARTING_Y);
+            // firstPathAlgo(STARTING_X, STARTING_Y);
             // hard_coded();
             // moveGrids(4);
             // cancel_repeating_timer(&pid_timer);

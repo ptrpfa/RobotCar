@@ -210,25 +210,12 @@ float compute_pid(float setpoint, float current_value, float *integral, float *p
     return control_signal;
 }
 
-float map_pid_to_pwm(float control_signal)
-{
-    // Assuming control_signal is normalized between -100 and 100
-    control_signal = fmax(fmin(control_signal, 100), 0); // Clamp to [-100, 100]
-    float pwm_range = PWM_MAX - PWM_MIN;
-    float pwm_unit = pwm_range / 100.0; // Divide by control signal range
-    return ((control_signal * pwm_unit) + PWM_MIN);
-}
-
 // Call this function at a regular interval, e.g., every 100ms
 void update_motor_speed()
 {
     // Compute the control signals
-    float control_signal_L = compute_pid(setpoint_speed, actual_speed_L, &integral_L, &prev_error_L);
-    float control_signal_R = compute_pid(setpoint_speed, actual_speed_R, &integral_R, &prev_error_R);
-
-    // Convert the control signals to PWM values
-    pwmL = map_pid_to_pwm(control_signal_L);
-    pwmR = map_pid_to_pwm(control_signal_R);
+    pwmL = compute_pid(setpoint_speed, actual_speed_L, &integral_L, &prev_error_L);
+    pwmR = compute_pid(setpoint_speed, actual_speed_R, &integral_R, &prev_error_R);
 }
 
 /*

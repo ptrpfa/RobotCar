@@ -5,7 +5,7 @@ execute_process(COMMAND
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     )
 
-add_executable(${PROGRAM_NAME} wifi.c cgi.c ssi.c)
+add_executable(${PROGRAM_NAME} wifi.c cgi.c ssi.c fakemazegrid.c)
 
 target_include_directories(${PROGRAM_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}

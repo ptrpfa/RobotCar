@@ -10,8 +10,8 @@
 int startCar = 0;
 
 // WIFI Credentials
-const char WIFI_SSID[] = "JR";
-const char WIFI_PASSWORD[] = "hello123";
+const char WIFI_SSID[] = "P";
+const char WIFI_PASSWORD[] = "embedded";
 
 int main()
 {
@@ -53,43 +53,43 @@ int main()
 
     while (1)
     {
-        if (startCar == 1)
-        {
-            // Get distance from ultrasonic sensor
-            for (int i = 0; i < 10; i++)
-            {
-                cm = getCm(state);
-            }
+        // if (startCar == 1)
+        // {
+        //     // Get distance from ultrasonic sensor
+        //     for (int i = 0; i < 10; i++)
+        //     {
+        //         cm = getCm(state);
+        //     }
 
-            printf("Distance: %.2lf cm\n", cm);
+        //     printf("Distance: %.2lf cm\n", cm);
 
-            // If an obstacle is too close, stop motor and turn left
-            if (cm < 22)
-            {
-                // // Get distance from ultrasonic sensor
-                // for (int i = 0; i < 10; i++) {
-                //     cm = getCm(state);
-                // }
+        //     // If an obstacle is too close, stop motor and turn left
+        //     if (cm < 22)
+        //     {
+        //         // // Get distance from ultrasonic sensor
+        //         // for (int i = 0; i < 10; i++) {
+        //         //     cm = getCm(state);
+        //         // }
 
-                // if (cm < 10) {
-                stopMotor();
-                sleep_ms(1000);
-                turnMotor(1);
-                // }
-            }
-            else
-            {
-                // Run the motor at half of the duty cycle
-                // moveMotor(1563);
-                moveMotor(3125);
-            }
+        //         // if (cm < 10) {
+        //         stopMotor();
+        //         sleep_ms(1000);
+        //         turnMotor(1);
+        //         // }
+        //     }
+        //     else
+        //     {
+        //         // Run the motor at half of the duty cycle
+        //         // moveMotor(1563);
+        //         moveMotor(3125);
+        //     }
 
-            sleep_ms(250);
-        }
-        else
-        {
-            stopMotor();
-        }
+        //     sleep_ms(250);
+        // }
+        // else
+        // {
+        //     stopMotor();
+        // }
     }
 
     return 0;

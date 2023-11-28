@@ -27,7 +27,7 @@ void getSpeedAndDistance(int encoder, uint32_t pulseCount);
 void encoderPulse(uint gpio);
 bool encoderCallback();
 void initEncoderSetup();
-uint32_t getGridsMoved();
+uint32_t getGridsMoved(bool reset);
 void startTracking(int targetGrids);
 
 #endif

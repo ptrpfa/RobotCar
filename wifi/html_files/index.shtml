@@ -90,14 +90,18 @@
           <a href="/index.shtml" class="button">Refresh</a>
         </div>
         <div class="controls">
-          <h2 style="padding-bottom: 1rem; padding-top: 1rem">Engine Controls:</h2>
+          <h2 style="padding-bottom: 1rem; padding-top: 1rem">
+            Engine Controls:
+          </h2>
           <a onclick="toggleEngine(1)" class="button">Start Car</a>
           <a onclick="toggleEngine(0)" class="button">Stop Car</a>
           <a href="/index.shtml" class="button">Refresh</a>
         </div>
 
         <div class="controls">
-          <h2 style="padding-bottom: 1rem; padding-top: 1rem">Barcode Controls:</h2>
+          <h2 style="padding-bottom: 1rem; padding-top: 1rem">
+            Barcode Controls:
+          </h2>
           <a onclick="toggleBarcode(1)" class="button">Reset Barcode</a>
           <a href="/index.shtml" class="button">Refresh</a>
         </div>
@@ -133,26 +137,24 @@
           value="<!--#height-->"
         />
         <h2>Map&#x1F9C0;&#x1F42D;</h2>
-        <hr>
+        <hr />
         <div id="map-container">
           <div class="grid"></div>
-          <!-- <p><u>Legend</u></p> -->
-          <!-- <p>B*: Barcode location</p> -->
-          <!-- <p>O: Obstacle location</p> -->
-  
-          <p><u>Barcode Values</u></p>
-          <p>B1: <b id="b1-value"><!--#b1--></b></p>
-          <p>B2: <b id="b2-value"><!--#b2--></b></p>
-          <p>B3: <b id="b3-value"><!--#b3--></b></p>
+          <p><u>Legend</u></p>
+          <p>BC: Barcode location</p>
+          <p>O: Obstacle location</p>
+
+          <p><u>Barcode</u></p>
+          <p>
+            Value: <b id="bc-value"><!--#bc--></b>
+          </p>
         </div>
         <!-- <div id="no-map" style="text-align:center">
           <h3>No map data!</h3>
         </div> -->
-
       </div>
     </div>
     <script>
-      
       document.addEventListener("DOMContentLoaded", function () {
         const max_width = document.getElementById("max-width").value;
         const max_height = document.getElementById("max-height").value;
@@ -161,15 +163,16 @@
 
         const total_cells = max_height * max_width;
         let barcode_counter = 1;
-        
+
         function makegrid(gridmap) {
           let json_grid_data = JSON.parse(gridmap.replace(/'/g, '"'));
 
+          console.log(json_grid_data);
           var current_x;
           var current_y;
           var wall_details;
-  
-          json_grid_data.forEach(function(celldata) {
+
+          json_grid_data.forEach(function (celldata) {
             var cell = document.createElement("div"); // Create a new div for each cell
             cell.className = "grid-cell"; // Assign class name to the cell
             cell.style.gridColumnStart = celldata.x + 1; // Set its location to the second column
@@ -190,20 +193,21 @@
 
             var content = document.createElement("div");
             content.className = "grid-cell-content"; // For barcode
-            if (celldata.v === 2) { // Obstacle
+            if (celldata.v === 2) {
+              // Obstacle
               content.innerHTML = "O";
-            } else if (celldata.v === 3) { // Barcode
-              content.innerHTML = `B${barcode_counter}`;
-              document.getElementById(`b${barcode_counter}-value`).innerHTML = celldata.c;
-              barcode_counter += 1;
+            } else if (celldata.v === 3) {
+              // Barcode
+              content.innerHTML = "BC";
+              document.getElementById(`bc-value`).innerHTML = celldata.c;
             }
-  
+
             cell.appendChild(content);
-  
+
             gridContainer.appendChild(cell); // Append the cell to the grid container
           });
         }
-        
+
         if ("<!--#grid1-->") {
           // document.getElementById("no-map").style.display='none';
           // document.getElementById("map-container").style.display='block';
