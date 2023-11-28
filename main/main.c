@@ -19,10 +19,13 @@
 // Define maze conditions, starting and ending grid
 #define MAZE_WIDTH 4
 #define MAZE_HEIGHT 6
+// Start: (1, 0)
 #define STARTING_X 1
-#define STARTING_Y 5
+#define STARTING_Y 0
+
+// End: (1, 0)
 #define ENDING_X 2
-#define ENDING_Y 0
+#define ENDING_Y 5
 
 // // Struct for maze cell
 // struct Cell
@@ -723,8 +726,11 @@ int main()
             // Call pathfinding algorithm
             // firstPathAlgo(STARTING_X, STARTING_Y);
 
-            // Move car
-            solveMaze();
+            // Revert car to start position
+            // solveMaze(ENDING_X, ENDING_Y, STARTING_X, STARTING_Y);
+            
+            // Solve maze
+            solveMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);
             // cancel_repeating_timer(&pid_timer);
             // sleep_ms(10000);
             startCar = 0;

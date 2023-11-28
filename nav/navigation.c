@@ -164,7 +164,7 @@ bool pidUpdateCallback(struct repeating_timer *t)
 }
 
 // Solve 
-void solveMaze() {
+void solveMaze(int start_x, int start_y, int end_x, int end_y) {
     // Initialize exploration path variables
     struct Coordinates path[MAZE_WIDTH * MAZE_HEIGHT];
     int pathLength = 0;
@@ -174,7 +174,7 @@ void solveMaze() {
     struct Coordinates shortest_path[MAZE_WIDTH * MAZE_HEIGHT];
 
     // Find the shortest path using DFS
-    navigateMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y, path, pathLength, &shortest_path_length, shortest_path);
+    navigateMaze(start_x, start_y, end_x, end_y, path, pathLength, &shortest_path_length, shortest_path);
 
     // int found_path[9][2] = {{1, 0}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {3, 3}, {3, 4}, {2, 4}, {2, 5}}; 
     // int found_path[9][2] = {{1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {3, 3}, {3, 4}, {3, 5}, {2, 5}};
