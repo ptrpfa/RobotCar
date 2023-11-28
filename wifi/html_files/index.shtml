@@ -147,13 +147,7 @@
         <div id="map-container">
           <div class="grid"></div>
           <p><u>Legend</u></p>
-          <p>BC: Barcode location</p>
           <p>O: Obstacle location</p>
-
-          <p><u>Barcode</u></p>
-          <p>
-            Value: <b id="bc-value"><!--#bc--></b>
-          </p>
         </div>
         <div id="no-map" style="text-align: center">
           <h3>No map data!</h3>
@@ -204,8 +198,7 @@
               content.innerHTML = "O";
             } else if (celldata.v === 3) {
               // Barcode
-              content.innerHTML = "BC";
-              document.getElementById(`bc-value`).innerHTML = "<!--#bc-->";
+              content.innerHTML = "<!--#bc-->";
             }
 
             cell.appendChild(content);

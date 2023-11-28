@@ -11,7 +11,7 @@ volatile bool barcode_scan = false;
 
 /* Global Variables */
 extern volatile bool barcode_scan;
-volatile bool barcode_update = false;
+volatile bool scanning_allowed = false;
 bool reverse_scan = false;                   // Boolean to check whether current scan direction is reversed or not
 bool start_scan = false;                     // Boolean to store current scan status, used to ignore initial change in state
 uint64_t last_state_change_time = 0;         // Variable to store the last time where the state changed (microseconds), used for measuring the time it takes to scan each bar
@@ -277,7 +277,6 @@ void read_barcode()
                         // barcode_char = ERROR_CHAR;
                         // Reset number of characters scanned
                         count_scanned_char = 0;
-                        barcode_update = true;
                     }
                     break;
                 default:
@@ -312,7 +311,7 @@ void read_barcode()
 void barcode_callback(uint gpio, uint32_t events)
 {
     // Ensure that the time difference between current time and last button press is not within the debounce delay threshold
-    if ((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS && gpio == 18)
+    if ((time_us_64() - last_state_change_time) > DEBOUNCE_DELAY_MICROSECONDS && gpio == 18 && scanning_allowed)
     {
         barcode_scan = true;
         // Read barcode

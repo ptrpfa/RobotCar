@@ -42,7 +42,6 @@ void get_echo_pulse(uint gpio, uint32_t events)
     {
         // Falling edge detected, calculate the pulse width
         pulse_width = absolute_time_diff_us(start_time, get_absolute_time());
-        printf("pulsewidth: %d\n", pulse_width);
     }
 }
 
@@ -72,7 +71,7 @@ uint64_t getPulse()
     sleep_us(10);
     gpio_put(TRIGPIN, 0);
     sleep_ms(1);
-    
+
     return pulse_width;
 }
 
@@ -82,10 +81,11 @@ double getCm(kalman_state *state)
     double measured = pulseLength / 29.0 / 2.0;
     kalman_update(state, measured);
 
-    if (state->x < 10) {
+    if (state->x < 10)
+    {
         obstacleDetected = true;
     }
-    
+
     return state->x;
 }
 

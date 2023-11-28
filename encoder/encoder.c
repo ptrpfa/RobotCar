@@ -18,7 +18,7 @@ void getSpeedAndDistance(int encoder, uint32_t pulseCount)
     // Calculate motor speed in cm/s
     double distancePerHole = ENCODER_CIRCUMFERENCE / ENCODER_NOTCH;
     double distance = distancePerHole * pulseCount;
-    double speed = distance / 0.1;
+    double speed = distance / 0.075;
 
     // Calculate and accumulate the distance
     movedDistance += distance;
@@ -27,7 +27,6 @@ void getSpeedAndDistance(int encoder, uint32_t pulseCount)
     if (encoder == 0)
     {
         actual_speed_L = speed;
-        // printf("LEFT SPEED: %lf\n\n", actual_speed_L);
     }
     else if (encoder == 1)
     {

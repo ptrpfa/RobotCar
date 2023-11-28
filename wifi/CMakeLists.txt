@@ -5,12 +5,13 @@ execute_process(COMMAND
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     )
 
-add_executable(${PROGRAM_NAME} wifi.c cgi.c ssi.c fakemazegrid.c)
+add_executable(${PROGRAM_NAME} wifi.c cgi.c ssi.c)
 
 target_include_directories(${PROGRAM_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/../motor
     ${CMAKE_CURRENT_LIST_DIR}/../ultrasonic
+    ${CMAKE_CURRENT_LIST_DIR}/../nav
     ${CMAKE_CURRENT_LIST_DIR}/../irline/barcode
     )
 

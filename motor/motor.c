@@ -85,7 +85,7 @@ void initMotorPWM()
 // Function to move forward
 void moveMotor(float new_pwmL, float new_pwmR)
 {
-    printf("UPDATING MOTOR : LEFT - %f, RIGHT - %f\n", new_pwmL, new_pwmR);
+    // printf("UPDATING MOTOR : LEFT - %f, RIGHT - %f\n", new_pwmL, new_pwmR);
 
     // stopMotor();
     sleep_ms(50);
@@ -162,7 +162,7 @@ void turnMotor(int direction)
 
     oscillation = 0;
 
-    int targetNotchCount = 290 * ENCODER_NOTCH / 360;
+    int targetNotchCount = 235 * ENCODER_NOTCH / 360;
     moveMotor(3125, 3125);
 
     // Motor to turn left
@@ -211,12 +211,11 @@ void moveGrids(int number_of_grids)
         moveMotor(pwmL, pwmR);
         sleep_ms(50);
     }
-
     // Stop once reached target grids
     stopMotor();
 }
 
-// Function to move forward for a set number of grids
+// Function to move backwards for a set number of grids
 void reverseGrids(int number_of_grids)
 {
     startTracking(number_of_grids);

@@ -24,32 +24,28 @@
 #define STARTING_X 1
 #define STARTING_Y 0
 
-// End: (1, 0)
+// End: (2, 5)
 #define ENDING_X 2
 #define ENDING_Y 5
 
-// // Struct for maze cell
-// struct Cell
-// {
-//     int northWall; // -1 - unvisited, 0 - empty, 1 - wall
-//     int southWall; // -1 - unvisited, 0 - empty, 1 - wall
-//     int eastWall;  // -1 - unvisited, 0 - empty, 1 - wall
-//     int westWall;  // -1 - unvisited, 0 - empty, 1 - wall
-//     int visited;   // 0 - unvisited, 1 - visited, 2 - obstacle, 3 - barcode
-// };
-
-// struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
 struct repeating_timer pid_timer;
 
+typedef enum
+{
+    SOUTH = 0,
+    WEST = 1,
+    NORTH = 2,
+    EAST = 3
+} Direction;
+
 // Global variables
-const char WIFI_SSID[] = "P";         // Wifi credentials
-const char WIFI_PASSWORD[] = "embedded";  // Wifi credentials
-int position = 0;                         // 0 - S, 1 - W, 2 - N, 3 - E
+const char WIFI_SSID[] = "P";            // Wifi credentials
+const char WIFI_PASSWORD[] = "embedded"; // Wifi credentials
+int position = SOUTH;                    // 0 - S, 1 - W, 2 - N, 3 - E
+
 int startCar = 0;                         // From CGI to toggle car start / stop
 int cellsLeft = MAZE_HEIGHT * MAZE_WIDTH; // Total numbers of cells to map
-bool wallDetected = false;                // Wall detection variable
-bool leftWallDetected = false;            // Wall detection variable
-bool rightWallDetected = false;           // Wall detection variable
+kalman_state *state;                      // kalman state for ultrasonic
 
 // Function to check if x, y is within maze boudaries
 int isValid(int x, int y)
@@ -57,30 +53,7 @@ int isValid(int x, int y)
     return x >= 0 && x < MAZE_WIDTH && y >= 0 && y < MAZE_HEIGHT;
 }
 
-void updateObstacle(int x, int y, int position)
-{
-    switch (position)
-    {
-    case 0: // South
-        mazeGrid[x][y + 1].visited = 2;
-        cellsLeft -= 1;
-        break;
-    case 1: // West
-        mazeGrid[x - 1][y].visited = 2;
-        cellsLeft -= 1;
-        break;
-    case 2: // North
-        mazeGrid[x][y - 1].visited = 2;
-        cellsLeft -= 1;
-        break;
-    case 3: // East
-        mazeGrid[x + 1][y].visited = 2;
-        cellsLeft -= 1;
-        break;
-    }
-    return;
-}
-
+//  Mark a cell as visited if all walls are marked
 void checkIfVisited(int x, int y)
 {
     if (mazeGrid[x][y].visited == 0 &&
@@ -94,58 +67,43 @@ void checkIfVisited(int x, int y)
     }
 }
 
-int checkIfCellIsVisited(int current_x, int current_y, int number_of_turns)
+// Returns visit status of cell in front of car
+int getVisitStatus(int current_x, int current_y)
 {
-    int new_position = position + number_of_turns;
-
-    if (new_position > 3)
+    switch (position)
     {
-        new_position -= 4;
-    }
-
-    switch (new_position)
-    {
-    case 0:
-        if (isValid(current_x, current_y - 1))
-        {
-            return mazeGrid[current_x][current_y - 1].visited;
-        }
-        break;
-    case 1:
-        if (isValid(current_x - 1, current_y))
-        {
-            return mazeGrid[current_x - 1][current_y].visited;
-        }
-        break;
-    case 2:
+    case SOUTH:
         if (isValid(current_x, current_y + 1))
         {
             return mazeGrid[current_x][current_y + 1].visited;
         }
         break;
-    case 3:
+    case WEST:
+        if (isValid(current_x - 1, current_y))
+        {
+            return mazeGrid[current_x - 1][current_y].visited;
+        }
+        break;
+    case NORTH:
+        if (isValid(current_x, current_y - 1))
+        {
+            return mazeGrid[current_x][current_y - 1].visited;
+        }
+        break;
+    case EAST:
         if (isValid(current_x + 1, current_y))
         {
             return mazeGrid[current_x + 1][current_y].visited;
         }
         break;
     }
-    // Cell is invalid, return true so car won't go there
+    // Cell is invalid, return 1 so car won't go there
     return 1;
 }
 
-void updatePosition(int turn)
-{
-    position += turn;
-
-    if (position > 3)
-    {
-        position -= 4;
-    }
-}
-
 // Return wall status
-int wallIsChecked(int current_x, int current_y, int number_of_turns)
+// Number of turns in CLOCKWISE!
+int getWallStatus(int current_x, int current_y, int number_of_turns)
 {
     int new_position = number_of_turns + position;
 
@@ -154,44 +112,43 @@ int wallIsChecked(int current_x, int current_y, int number_of_turns)
         new_position -= 4;
     }
 
-    printf("NEW POSITION TO CHECK: %d\n", new_position);
-    int wall_status;
     switch (new_position)
     {
-    case 0:
+    case SOUTH:
         // South
         return mazeGrid[current_x][current_y].southWall;
         break;
-    case 1:
+    case WEST:
         // West
         return mazeGrid[current_x][current_y].westWall;
         break;
-    case 2:
+    case NORTH:
         // North
         return mazeGrid[current_x][current_y].northWall;
         break;
-    case 3:
+    case EAST:
         // East
         return mazeGrid[current_x][current_y].eastWall;
         break;
     }
 }
 
-void updateWall(int wall, int x, int y, int new_position)
+// Update wall status of coordinate and adjacent cell
+void updateWall(int wall, int x, int y)
 {
-    switch (new_position)
+    switch (position)
     {
     // South
-    case 0:
+    case SOUTH:
         mazeGrid[x][y].southWall = wall;
-        if (y > 0)
+        if (y < MAZE_HEIGHT - 1)
         {
-            mazeGrid[x][y - 1].northWall = wall;
-            checkIfVisited(x, y - 1);
+            mazeGrid[x][y + 1].northWall = wall;
+            checkIfVisited(x, y + 1);
         }
         break;
     // West
-    case 1:
+    case WEST:
         mazeGrid[x][y].westWall = wall;
         if (x > 0)
         {
@@ -200,18 +157,18 @@ void updateWall(int wall, int x, int y, int new_position)
         }
         break;
     // North
-    case 2:
+    case NORTH:
         mazeGrid[x][y].northWall = wall;
-        if (y < MAZE_HEIGHT - 2)
+        if (y > 0)
         {
-            mazeGrid[x][y + 1].southWall = wall;
-            checkIfVisited(x, y + 1);
+            mazeGrid[x][y - 1].southWall = wall;
+            checkIfVisited(x, y - 1);
         }
         break;
     // East
-    case 3:
+    case EAST:
         mazeGrid[x][y].eastWall = wall;
-        if (x < MAZE_WIDTH - 2)
+        if (x < MAZE_WIDTH - 1)
         {
             mazeGrid[x + 1][y].westWall = wall;
             checkIfVisited(x + 1, y);
@@ -219,25 +176,32 @@ void updateWall(int wall, int x, int y, int new_position)
         break;
     }
     checkIfVisited(x, y);
+    return;
 }
 
-void updateBarcode(int new_position, int x, int y, int grids_moved)
+// Update coordinate if cell in front of car is an obstacle
+void updateObstacle(int x, int y)
 {
-    switch (new_position)
+    switch (position)
     {
-    case 0: // South
-        mazeGrid[x][y + grids_moved] = 3;
+    case SOUTH: // South
+        mazeGrid[x][y + 1].visited = 2;
+        cellsLeft -= 1;
         break;
-    case 1: // West
-        mazeGrid[x - grids_moved][y] = 3;
+    case WEST: // West
+        mazeGrid[x - 1][y].visited = 2;
+        cellsLeft -= 1;
         break;
-    case 2: // North
-        mazeGrid[x][y - grids_moved] = 3;
+    case NORTH: // North
+        mazeGrid[x][y - 1].visited = 2;
+        cellsLeft -= 1;
         break;
-    case 3: // East
-        mazeGrid[x + grids_moved][y] = 3;
+    case EAST: // East
+        mazeGrid[x + 1][y].visited = 2;
+        cellsLeft -= 1;
         break;
     }
+    return;
 }
 
 // Function for PID timer callback
@@ -248,333 +212,216 @@ bool pid_update_callback(struct repeating_timer *t)
     return true;
 }
 
-// Function to map out the entire maze
-void firstPathAlgo(int current_x, int current_y)
+// Change in x-coordinate based on the direction
+int getDeltaX()
 {
-    if (cellsLeft == 0)
+    if (position == WEST)
     {
-        return;
+        return -1;
     }
 
-    // Start facing south and move
-
-    add_repeating_timer_ms(100, pid_update_callback, NULL, &pid_timer);
-    leftWallDetected = false;
-    rightWallDetected = false;
-    obstacleDetected = false;
-
-    while (!(leftWallDetected && rightWallDetected) && !obstacleDetected && (checkIfCellIsVisited(current_x, current_y, 0) == 0))
+    if (position == EAST)
     {
-        moveMotor(pwmL, pwmR);
-        // Constantly check if barcode detected
-        if (barcode_update)
-        {
-            // Get number of grids moved but dont reset
-            uint32_t grids_moved = getGridsMoved(false);
-            updateBarcode(position, current_x, current_y, grids_moved);
-        }
-        sleep_ms(50);
-    }
-    cancel_repeating_timer(&pid_timer);
-
-    // Encountered wall, stop
-    stopMotor();
-
-    uint32_t grids_moved = getGridsMoved(true);
-    printf("GRIDS MOVED: %d\n", grids_moved);
-
-    sleep_ms(2000);
-
-    // Update the car's current position
-    switch (position)
-    {
-    // South
-    case 0:
-        for (int i = 0; i < grids_moved; i++)
-        {
-            updateWall(0, current_x, current_y, 0);
-            current_y--;
-        }
-        break;
-    // West
-    case 1:
-        for (int i = 0; i < grids_moved; i++)
-        {
-            updateWall(0, current_x, current_y, 1);
-            current_x--;
-        }
-        break;
-    // North
-    case 2:
-        for (int i = 0; i < grids_moved; i++)
-        {
-            updateWall(0, current_x, current_y, 2);
-            current_y++;
-        }
-        break;
-    // East
-    case 3:
-        for (int i = 0; i < grids_moved; i++)
-        {
-            updateWall(0, current_x, current_y, 3);
-            current_x++;
-        }
-        break;
+        return 1;
     }
 
-    // Update mazegrid
-    if (obstacleDetected)
+    return 0;
+}
+
+// Change in y-coordinate based on the direction
+int getDeltaY()
+{
+    if (position == NORTH)
     {
-        updateObstacle(current_x, current_y, position);
-    }
-    else
-    {
-        updateWall(1, current_x, current_y, position);
+        return -1;
     }
 
-    // Reset flags
-    leftWallDetected = false;
-    rightWallDetected = false;
-    obstacleDetected = false;
-
-    // Check if wall 90 degrees to the right is checked
-    if (wallIsChecked(current_x, current_y, 1) == -1)
+    if (position == SOUTH)
     {
-        printf("TURNING RIGHT\n");
-        // Turn right
+        return 1;
+    }
+
+    return 0;
+}
+
+// Recursive function to map out the entire maze
+void mapMaze(int current_x, int current_y)
+{
+    double cm; // To check for obstacle
+
+    // Update current cell as visited
+    mazeGrid[current_x][current_y].visited = 1;
+
+    // Check if cell behind car is valid
+    if (isValid(current_x - getDeltaX(), current_y - getDeltaX()))
+    {
+        // If cell behind is barcode cell, this is barcode cell
+        // as barcode spans between 2 cells
+        if (mazeGrid[current_x - getDeltaX()][current_y - getDeltaY()].visited == 3)
+        {
+            mazeGrid[current_x][current_y].visited = 3;
+        }
+    }
+
+    // Don't allow barcode scanning if cell already marked as barcode cell
+    scanning_allowed = !(mazeGrid[current_x][current_y].visited == 3);
+
+    // Check if theres an obstacle
+    for (int i = 0; i < 20; i++)
+    {
+        cm = getCm(state);
+    }
+
+    // If theres an obstacle, update the obstacle cell
+    if (cm < 10)
+    {
+        printf("Obstacle Detected %.2lf away!\n", cm);
+        updateObstacle(current_x, current_y);
+        obstacleDetected = false; // Reset obstacle detected flag
+    }
+
+    /* If barcode is scanning,
+     * move one more grid to finish scanning,
+     * mark as barcode cell and reverse one grid to return to current cell
+     */
+    if (start_scan)
+    {
+        printf("Barcode scanning\n");
+
+        moveGrids(1);
+        sleep_ms(1500);
+        mazeGrid[current_x][current_y].visited = 3;
+        reverseGrids(1);
+        sleep_ms(1500);
+    }
+
+    /***** Start the recursive journey *****/
+    // Check front wall first
+    if (isWallDetected())
+    {
+        printf("Wall at the front\n");
+        // Theres a wall in front!
+        updateWall(1, current_x, current_y);
+    }
+    else if (getVisitStatus(current_x, current_y) == 0)
+    {
+        // No wall in front and cell not visited!
+        // Update wall status
+        updateWall(0, current_x, current_y);
+
+        // Recursive
+        moveGrids(1);
+        sleep_ms(1500);
+        mapMaze(current_x + getDeltaX(), current_y + getDeltaY());
+    }
+
+    /***** Front side settled, now check right *****/
+    // Check if wall on the right is checked
+    if (getWallStatus(current_x, current_y, 1) == -1)
+    {
+        printf("Checking right\n");
+        // Car does not know about the wall on the right, turn
         turnMotor(1);
-        sleep_ms(2000);
+        position = (position + 1) % 4;
+        sleep_ms(1500);
 
-        // Update position
-        updatePosition(1);
-
-        if (isWallDetected())
+        // Check if theres an obstacle
+        for (int i = 0; i < 20; i++)
         {
-            updateWall(1, current_x, current_y, position);
-            sleep_ms(2000);
+            cm = getCm(state);
+        }
 
-            // Already turned 90 to the right, check opposite
-            if (wallIsChecked(current_x, current_y, 2) == -1)
-            {
-                // Turn 180
-                turnMotor(1);
-                turnMotor(1);
-                sleep_ms(2000);
-
-                updatePosition(2);
-
-                // Turned to east
-                if (isWallDetected())
-                {
-                    // DEAD END
-                    updateWall(1, current_x, current_y, position);
-
-                    // Backtrack
-                    // Get the only wall that is opened
-                    // Turn left
-                    turnMotor(0);
-                    updatePosition(3);
-                    sleep_ms(2000);
-
-                    // Move one grid
-                    moveGrids(1);
-                    sleep_ms(2000);
-
-                    switch (position)
-                    {
-                    // South
-                    case 0:
-                        current_y -= 1;
-                        break;
-                    // West
-                    case 1:
-                        current_x -= 1;
-                        break;
-                    // North
-                    case 2:
-                        current_y += 1;
-                        break;
-                    // East
-                    case 3:
-                        current_x += 1;
-                        break;
-                    }
-
-                    if (isWallDetected() ||
-                        (current_x == STARTING_X && current_y == STARTING_Y && position == 3) ||
-                        (current_x == ENDING_X && current_y == ENDING_Y && position == 1))
-                    {
-                        // Turn right
-                        turnMotor(1);
-                        updatePosition(1);
-                        sleep_ms(2000);
-                    }
-                }
-                else
-                {
-                    // No wall
-                    updateWall(0, current_x, current_y, position);
-                }
-            }
-            else if (wallIsChecked(current_x, current_y, 2) == 0)
-            {
-                // No wall; check if cell is visited
-                if (checkIfCellIsVisited(current_x, current_y, 2) > 0)
-                {
-                    // Turn right and backtrack
-                    turnMotor(1);
-                    updatePosition(1);
-                    sleep_ms(2000);
-                }
-                else
-                {
-                    // Turn 180
-                    turnMotor(1);
-                    turnMotor(1);
-                    updatePosition(2);
-                    sleep_ms(2000);
-                }
-            }
-            else
-            {
-                // Theres a wall opposite
-                // DEAD END
-                // Turn right and backtrack
-                turnMotor(1);
-                updatePosition(1);
-                sleep_ms(2000);
-            }
+        // If theres an obstacle, update the obstacle cell
+        if (cm < 10)
+        {
+            printf("Obstacle on the right!\n");
+            updateObstacle(current_x, current_y);
+            obstacleDetected = false; // Reset obstacle detected flag
         }
         else
         {
-            // No wall
-            updateWall(0, current_x, current_y, position);
-        }
-    }
-    else if (wallIsChecked(current_x, current_y, 1) == 0)
-    {
-        // No wall; check if cell is visited
-        if (checkIfCellIsVisited(current_x, current_y, 1) > 0)
-        {
-            // Cell is visited already
-            // Check left
-            if (wallIsChecked(current_x, current_y, 3) == 0)
-            {
-                // No wall, check if visited
-                if (checkIfCellIsVisited(current_x, current_y, 3) > 0)
-                {
-                    // Cell is visited already, Uturn and backtrack
-                    turnMotor(1);
-                    turnMotor(1);
-                    updatePosition(2);
-                    sleep_ms(2000);
-                }
-                else
-                {
-                    // Cell not visited yet, turn left and recursive
-                    turnMotor(0);
-                    updatePosition(3);
-                    sleep_ms(2000);
-                }
-            }
-            else if (wallIsChecked(current_x, current_y, 3) == -1)
-            {
-                // Turn left and check for wall
-                turnMotor(0);
-                updatePosition(3);
-                sleep_ms(2000);
-                if (isWallDetected())
-                {
-                    updateWall(1, current_x, current_y, position);
-                    // Theres a wall, turn left again and backtrack
-                    turnMotor(0);
-                    updatePosition(3);
-                    sleep_ms(2000);
-                }
-                else
-                {
-                    // No wall,
-                    updateWall(0, current_x, current_y, position);
-                }
-            }
-            else
-            {
-                // Theres a wall on the left, uturn and backtrack
-                turnMotor(1);
-                turnMotor(1);
-                updatePosition(2);
-                sleep_ms(2000);
-            }
-        }
-        else
-        {
-            // Right no wall and not visited
-            // Turn right and recursive
-            turnMotor(1);
-            updatePosition(1);
-            sleep_ms(2000);
-        }
-    }
-    else
-    {
-        // Theres a wall on the right
-        // Check left
-        if (wallIsChecked(current_x, current_y, 3) == 0)
-        {
-            // No wall, check if visited
-            if (checkIfCellIsVisited(current_x, current_y, 3) > 0)
-            {
-                // Cell is visited already, Uturn and backtrack
-                turnMotor(1);
-                turnMotor(1);
-                updatePosition(2);
-                sleep_ms(2000);
-            }
-            else
-            {
-                // Cell not visited yet, turn left and recursive
-                turnMotor(0);
-                updatePosition(3);
-                sleep_ms(2000);
-            }
-        }
-        else if (wallIsChecked(current_x, current_y, 3) == -1)
-        {
-            // Turn left and check for wall
-            turnMotor(0);
-            updatePosition(3);
-            sleep_ms(2000);
+            // No obstacles, check if there's a wall
             if (isWallDetected())
             {
-                updateWall(1, current_x, current_y, position);
-                // Theres a wall, turn left again and backtrack
-                turnMotor(0);
-                updatePosition(3);
-                sleep_ms(2000);
+                // There's a wall!
+                printf("Wall on the right!\n");
+                updateWall(1, current_x, current_y);
             }
             else
             {
-                // No wall,
-                updateWall(0, current_x, current_y, position);
+                // There's no wall, recursive if cell is not visited yet
+                updateWall(0, current_x, current_y);
+                if (getVisitStatus(current_x, current_y) == 0)
+                {
+                    moveGrids(1);
+                    sleep_ms(1500);
+
+                    mapMaze(current_x + getDeltaX(), current_y + getDeltaY());
+                }
             }
+        }
+        // Reset position
+        turnMotor(0);
+        position = (position + 3) % 4;
+        sleep_ms(1500);
+    }
+
+    /***** Lastly, left *****/
+    // Check if wall on the left is checked
+    if (getWallStatus(current_x, current_y, 3) == -1)
+    {
+        // Car does not know about the wall on the left, turn
+        turnMotor(0);
+        position = (position + 3) % 4;
+
+        sleep_ms(1500);
+
+        // Check if theres an obstacle
+        for (int i = 0; i < 20; i++)
+        {
+            cm = getCm(state);
+        }
+
+        // If theres an obstacle, update the obstacle cell
+        if (cm < 10)
+        {
+            updateObstacle(current_x, current_y);
+            obstacleDetected = false; // Reset obstacle detected flag
         }
         else
         {
-            // Theres a wall on the left, uturn and backtrack
-            turnMotor(1);
-            turnMotor(1);
-            updatePosition(2);
-            sleep_ms(2000);
+            // No obstacles, check if there's a wall
+            if (isWallDetected())
+            {
+                // There's a wall!
+                updateWall(1, current_x, current_y);
+            }
+            else
+            {
+                // There's no wall, recursive
+                updateWall(0, current_x, current_y);
+                if (getVisitStatus(current_x, current_y) == 0)
+                {
+                    moveGrids(1);
+                    sleep_ms(1500);
+
+                    mapMaze(current_x + getDeltaX(), current_y + getDeltaY());
+                }
+            }
         }
+
+        // Reset position
+        turnMotor(1);
+        position = (position + 1) % 4;
+        sleep_ms(1500);
     }
 
-    // Recursive
-    firstPathAlgo(current_x, current_y);
-
-    printf("STATUS CHECK\n");
-    printf("SOUTHWALL: %d\n", mazeGrid[current_x][current_y].southWall);
-    printf("EASTWALL: %d\n", mazeGrid[current_x][current_y].eastWall);
-    printf("WESTWALL: %d\n", mazeGrid[current_x][current_y].westWall);
+    // Go back if not starting grid
+    if (current_x != STARTING_X || current_y != STARTING_Y)
+    {
+        reverseGrids(1);
+        sleep_ms(1500);
+    }
 
     return;
 }
@@ -596,16 +443,6 @@ void callbacks(uint gpio, uint32_t events)
     case ECHOPIN:
         get_echo_pulse(ECHOPIN, events);
         break;
-    // Left wall sensor callback
-    case LEFT_IR_PIN:
-        printf("LEFT WALL DETECTED\n");
-        leftWallDetected = true;
-        break;
-    // Right wall sensor callback
-    case RIGHT_IR_PIN:
-        printf("RIGHT WALL DETECTED\n");
-        rightWallDetected = true;
-        break;
     // Barcode sensor callback
     case IR_SENSOR_PIN:
         barcode_callback(gpio, events);
@@ -625,8 +462,8 @@ void initializeMazeGrid()
         {
             mazeGrid[x][y].westWall = (x == 0 ? 1 : -1);
             mazeGrid[x][y].eastWall = (x == (MAZE_WIDTH - 1) ? 1 : -1);
-            mazeGrid[x][y].southWall = (y == 0 ? 1 : -1);
-            mazeGrid[x][y].northWall = (y == (MAZE_HEIGHT - 1) ? 1 : -1);
+            mazeGrid[x][y].northWall = (y == 0 ? 1 : -1);
+            mazeGrid[x][y].southWall = (y == (MAZE_HEIGHT - 1) ? 1 : -1);
 
             mazeGrid[x][y].visited = 0;
         }
@@ -655,48 +492,48 @@ void initAll()
     // Initialise web server
     httpd_init();
     printf("1/9 - Http server initialised\n");
-    sleep_ms(1000);
+    sleep_ms(500);
 
     // Initialise SSI and CGI handler
     ssi_init();
     cgi_init();
     printf("2/9 - SSI and CGI Handler initialised\n");
-    sleep_ms(1000);
+    sleep_ms(500);
 
     // Initialise motor pins and PWM
     initMotorSetup();
     initMotorPWM();
     printf("3/9 - Motor pins and PWM initialised\n");
-    sleep_ms(1000);
+    sleep_ms(500);
 
     // Initialise encoder pins and setup timer to generate interrupts every second to update speed and distance
     initEncoderSetup();
     printf("4/9 - Wheel encoder pins initialised\n");
-    sleep_ms(1000);
+    sleep_ms(500);
 
     // Initialise ultrasonic sensor
     setupUltrasonicPins();
-    kalman_state *state = kalman_init(1, 100, 0, 0);
+    state = kalman_init(1, 100, 0, 0);
     printf("5/9 - Ultrasonic pins initialised\n");
-    sleep_ms(1000);
+    sleep_ms(500);
 
     // Initialise wall sensors
     init_wallsensors();
     printf("6/9 - Wall sensor pins initialised\n");
-    sleep_ms(1000);
+    sleep_ms(500);
 
     // Initialise barcode sensor pin
     init_barcode();
     printf("7/9 - Barcode sensor pin initialised\n");
-    sleep_ms(1000);
+    sleep_ms(500);
 
     init_i2c_default();
     magnetometer_init();
     printf("8/9 - Magnetometer pins initialised\n");
-    sleep_ms(1000);
+    sleep_ms(500);
 
-    // initializeMazeGrid();
-    // printf("9/9 - Maze grids initialised\n");
+    initializeMazeGrid();
+    printf("9/9 - Maze grids initialised\n");
 }
 
 // Function to init all interrupts
@@ -706,8 +543,6 @@ void initInterrupts()
     gpio_set_irq_enabled_with_callback(L_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
     gpio_set_irq_enabled_with_callback(R_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
     gpio_set_irq_enabled_with_callback(ECHOPIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(LEFT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(RIGHT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
     gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &callbacks);
 }
 
@@ -718,33 +553,38 @@ int main()
     initInterrupts();
 
     // Init PID
-    // add_repeating_timer_ms(1000, pid_update_callback, NULL, &pid_timer);
-    kalman_state *state = kalman_init(1, 100, 0, 0);
+    add_repeating_timer_ms(75, pid_update_callback, NULL, &pid_timer);
+
     double cm;
 
-    while (true)
-    {   
-        if (startCar == 1)
-        {   
-            moveMotor(pwmL, pwmR);
+    while (startCar == 0)
+    {
+        // Wait
+    }
 
-            // // Call pathfinding algorithm
-            // firstPathAlgo(STARTING_X, STARTING_Y);
+    // Maybe change below into a function for cgi
 
-            // // Revert car to start position
-            // solveMaze(ENDING_X, ENDING_Y, STARTING_X, STARTING_Y);
-            
-            // // Solve maze
-            // solveMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);
-            // // cancel_repeating_timer(&pid_timer);
-            // // sleep_ms(10000);
-            // startCar = 0;
-        }
-        else
+    mapMaze(STARTING_X, STARTING_Y);
+
+    printf("** MAZE MAPPING COMPLETED **\n");
+    printf("** MAP DETAILS **\n");
+
+    for (int x = 0; x < MAZE_WIDTH; x++)
+    {
+        for (int y = 0; y < MAZE_HEIGHT; y++)
         {
-            stopMotor();
+            printf("X: %d, Y: %d, SOUTHWALL: %d, WESTWALL: %d, NORTHWALL: %d, EASTWALL: %d, VISITED: %d\n\n", x, y, mazeGrid[x][y].southWall, mazeGrid[x][y].westWall, mazeGrid[x][y].northWall, mazeGrid[x][y].eastWall, mazeGrid[x][y].visited);
         }
     }
+    isMazeMapped = true;
+    printf("TIME TO NAVIGATE\n");
+
+    //  For reference
+    // // Solve maze
+    // solveMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);
+    // // cancel_repeating_timer(&pid_timer);
+    // // sleep_ms(10000);
+    // startCar = 0;
 
     return 0;
 }

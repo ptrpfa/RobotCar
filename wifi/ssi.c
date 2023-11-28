@@ -1,6 +1,6 @@
 #include "ssi.h"
 #include "barcode.h"
-#include "fakemazegrid.h"
+#include "navigation.h"
 
 const char *ssi_tags[] = {"volt", "temp", "led", "width", "height", "grid1", "grid2", "grid3", "grid4", "grid5", "bc"};
 char formatted_map[5][192];
@@ -163,8 +163,7 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen)
   break;
   case 10: // bc
   {
-    // printed = snprintf(pcInsert, iInsertLen, "%c", barcode_char);
-    printed = snprintf(pcInsert, iInsertLen, "%c", 'K');
+    printed = snprintf(pcInsert, iInsertLen, "%c", barcode_char);
   }
   break;
   default:
@@ -182,6 +181,9 @@ void ssi_init()
   adc_set_temp_sensor_enabled(true);
   adc_select_input(4);
 
-  format_maze();
+  if (isMazeMapped)
+  {
+    format_maze();
+  }
   http_set_ssi_handler(ssi_handler, ssi_tags, LWIP_ARRAYSIZE(ssi_tags));
 }
