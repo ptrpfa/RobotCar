@@ -3,3 +3,4 @@
 **/.venv
 build/
 /Reference/
+**/a.out

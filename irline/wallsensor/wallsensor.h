@@ -8,8 +8,8 @@
 // extern volatile bool wallDetected;
 
 // Macros for pin configurations
-#define LEFT_IR_PIN 27
-#define RIGHT_IR_PIN 28
+#define RIGHT_IR_PIN 27 // Digital
+#define LEFT_IR_PIN 26  // Digital
 
 // Functions for wall sensors
 void init_wallsensors();

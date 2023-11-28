@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
-
-// Macros
-#define RIGHT_IR_PIN 27 // Digital
-#define LEFT_IR_PIN 26  // Digital
+#include "wallsensor.h"
 
 // Function to initialise ir line sensors
 void init_wallsensors()
@@ -20,7 +17,7 @@ void init_wallsensors()
 
 bool isWallDetected()
 {
-    if (gpio_get(LEFT_IR_PIN))
+    if (gpio_get(LEFT_IR_PIN) && gpio_get(RIGHT_IR_PIN))
     {
         printf("WALL DETECTED\n");
     }
@@ -28,7 +25,7 @@ bool isWallDetected()
     {
         printf("NO WALL\n");
     }
-    return gpio_get(LEFT_IR_PIN);
+    return gpio_get(LEFT_IR_PIN) && gpio_get(RIGHT_IR_PIN);
 }
 
 /*
@@ -44,8 +41,14 @@ int main() {
 
     // Loop forever
     while(true) {
-        gpio_get(LEFT_IR_PIN);
-        gpio_get(RIGHT_IR_PIN);
-    };
+        if (gpio_get(LEFT_IR_PIN))
+        {
+            printf("LEFT WALL DETECTED\n");
+        }
+        if (gpio_get(RIGHT_IR_PIN))
+        {
+            printf("RIGHT WALL DETECTED\n");
+        }
+    }
 }
 */
