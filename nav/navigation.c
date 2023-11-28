@@ -50,9 +50,7 @@ struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
         { 0, 0, 1, 0, 1, 0},   // Array index: (3, 4) 
         { 0, 1, 1, 1, 1, 0},   // Array index: (3, 5) 
     },
-    
 };
-
 
 // Initialise cells (hardcoded for now, to be populated by mapping algorithm)
 // struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
@@ -92,9 +90,9 @@ struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
 //         { 0, 0, 1, 1, 1, 0},   // Array index: (3, 4) 
 //         { 0, 1, 1, 0, 1, 0},   // Array index: (3, 5) 
 //     },
-    
 // };
 
+// Global variables
 bool isMazeMapped = false;
 int navigationPosition = 0; 
 struct repeating_timer pidTimer;
@@ -159,6 +157,7 @@ void navigateMaze(int x, int y, int end_x, int end_y, struct Coordinates path[],
     mazeGrid[x][y].nav_visited = 0;
 }
 
+// Function for PID timer callback
 bool pidUpdateCallback(struct repeating_timer *t)
 {
     encoderCallback();
@@ -166,7 +165,7 @@ bool pidUpdateCallback(struct repeating_timer *t)
     return true;
 }
 
-// Solve 
+// Function to solve maze with shortest path found from navigateMaze
 void solveMaze(int start_x, int start_y, int end_x, int end_y) {
     // Initialize exploration path variables
     struct Coordinates path[MAZE_WIDTH * MAZE_HEIGHT];
@@ -186,7 +185,9 @@ void solveMaze(int start_x, int start_y, int end_x, int end_y) {
     int currentX = STARTING_X;
     int currentY = STARTING_Y;
 
+    // Loop for every coordinate
     for (int i = 0; i < shortest_path_length + 1; ++i) {
+        // Reset the position to face south
         if (navigationPosition != 0) {
             if (navigationPosition == -1) {
                 turnMotor(1);
@@ -197,39 +198,50 @@ void solveMaze(int start_x, int start_y, int end_x, int end_y) {
             navigationPosition = 0;
         }
 
+        // Get new coordinates
         int nextX = shortest_path[i].x;
         int nextY = shortest_path[i].y;
 
+        // Check which pole the grid is on
         int deltaX = nextX - currentX;
         int deltaY = nextY - currentY;
 
-
+        // Start timer to control PID
         add_repeating_timer_ms(100, pidUpdateCallback, NULL, &pidTimer);
+
+        // If grid is on right, turn car left and move 1 grid
         if (deltaX == 1) {
             // Move left
             turnMotor(0);
             moveGrids(1);
             navigationPosition -= 1;
-        } else if (deltaX == -1) {
+        } 
+        // If grid is on left, turn car right and move 1 grid
+        else if (deltaX == -1) {
             // Move right
             turnMotor(1);
             moveGrids(1);
             navigationPosition += 1;
-        } else if (deltaY == 1) {
+        } 
+        // If grid is down, straight 1 grid
+        else if (deltaY == 1) {
             // Move down
             moveGrids(1);
-        } else if (deltaY == -1) {
+        } 
+        // If grid is up, reverse 1 grid
+        else if (deltaY == -1) {
             // Move up
             reverseGrids(1);
         }
 
+        // Set new coordinates and remove timer
         currentX = nextX;
         currentY = nextY;
         sleep_ms(2000);
         cancel_repeating_timer(&pidTimer);
     }
 
-    // Arrived at the destination
+    // Arrived at the destination, ensure face south
     if (navigationPosition != 0) {
         if (navigationPosition == -1) {
             turnMotor(1);

@@ -153,36 +153,6 @@ void stopMotor()
     gpio_put(R_MOTOR_ENB, 0);
 }
 
-// Function to move forward for a set number of grids
-void moveGrids(int number_of_grids)
-{
-    startTracking(number_of_grids);
-
-    while (!completeMovement)
-    {
-        moveMotor(pwmL, pwmR);
-        sleep_ms(50);
-    }
-
-    // Stop once reached target grids
-    stopMotor();
-}
-
-// Function to move forward for a set number of grids
-void reverseGrids(int number_of_grids)
-{
-    startTracking(number_of_grids);
-
-    while (!completeMovement)
-    {
-        reverseMotor(pwmL, pwmR);
-        sleep_ms(50);
-    }
-
-    // Stop once reached target grids
-    stopMotor();
-}
-
 // Function to turn
 // 0 - left, 1 - right
 void turnMotor(int direction)
@@ -231,6 +201,36 @@ void turnMotor(int direction)
     sleep_ms(50);
 }
 
+// Function to move forward for a set number of grids
+void moveGrids(int number_of_grids)
+{
+    startTracking(number_of_grids);
+
+    while (!completeMovement)
+    {
+        moveMotor(pwmL, pwmR);
+        sleep_ms(50);
+    }
+
+    // Stop once reached target grids
+    stopMotor();
+}
+
+// Function to move forward for a set number of grids
+void reverseGrids(int number_of_grids)
+{
+    startTracking(number_of_grids);
+
+    while (!completeMovement)
+    {
+        reverseMotor(pwmL, pwmR);
+        sleep_ms(50);
+    }
+
+    // Stop once reached target grids
+    stopMotor();
+}
+
 // Function to compute PID control signal
 float compute_pid(float setpoint, float current_value, float *integral, float *prev_error)
 {
@@ -247,7 +247,7 @@ float compute_pid(float setpoint, float current_value, float *integral, float *p
     return control_signal;
 }
 
-// Call this function at a regular interval, e.g., every 100ms
+// Call this function at a regular interval, e.g., every 100ms to stabilise car
 void update_motor_speed()
 {
     // Compute the control signals

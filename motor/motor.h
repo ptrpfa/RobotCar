@@ -16,6 +16,7 @@
 #define PWM_MIN 1600
 #define PWM_MAX 3125
 
+// External variables
 extern volatile float pwmL;
 extern volatile float pwmR;
 
