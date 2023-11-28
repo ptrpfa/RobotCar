@@ -722,7 +722,8 @@ int main()
         {
             // Call pathfinding algorithm
             // firstPathAlgo(STARTING_X, STARTING_Y);
-            navigateMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);
+
+            // Move car
             solveMaze();
             // cancel_repeating_timer(&pid_timer);
             // sleep_ms(10000);

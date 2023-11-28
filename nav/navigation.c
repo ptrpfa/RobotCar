@@ -57,10 +57,17 @@ bool isMazeMapped = false;
 int navigationPosition = 0; 
 struct repeating_timer pidTimer;
 
-void navigateMaze(int x, int y, int end_x, int end_y)
+// Struct to represent a point in the maze
+struct Coordinates
 {
-    /* Base Condition */
-    // Check if current coordinates is outside of map, or if current coordinates has already been visited
+    int x;
+    int y;
+};
+
+// Recursive function to find the shortest path
+void navigateMaze(int x, int y, int end_x, int end_y, struct Coordinates path[], int pathLength, int *shortest_path_length, struct Coordinates *shortest_path)
+{
+    // Base Condition
     if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT || mazeGrid[x][y].nav_visited == 1)
     {
         return;
@@ -69,34 +76,49 @@ void navigateMaze(int x, int y, int end_x, int end_y)
     // Mark the current cell as visited
     mazeGrid[x][y].nav_visited = 1;
 
+    // Add the current point to the path
+    path[pathLength].x = x;
+    path[pathLength].y = y;
+
     // Check if destination is reached
-    if (x == end_x && y == end_y) 
+    if (x == end_x && y == end_y)
     {
-        printf("(%d, %d)!\n", x, y);
+        // If the current path is shorter than the previously found minimum path, update the minimum path
+        if (pathLength < *shortest_path_length)
+        {
+            *shortest_path_length = pathLength;
+            for (int i = 0; i <= pathLength; ++i)
+            {
+                shortest_path[i] = path[i];
+            }
+        }
         return;
     }
 
-    // If the current cell is part of the solution, print it
-    printf("(%d, %d)\n", x, y);
-
     // Try moving in all possible directions, checking for walls (NSEW)
-    if(mazeGrid[x][y].northWall == 0 && mazeGrid[x][y].visited != 2) { // No north wall
+    if (mazeGrid[x][y].northWall == 0 && mazeGrid[x][y].visited != 2)
+    { // No north wall
         // Move north
-        navigateMaze(x, y - 1, end_x, end_y); 
+        navigateMaze(x, y - 1, end_x, end_y, path, pathLength + 1, shortest_path_length, shortest_path);
     }
-    if(mazeGrid[x][y].southWall == 0 && mazeGrid[x][y].visited != 2) { // No south wall
+    if (mazeGrid[x][y].southWall == 0 && mazeGrid[x][y].visited != 2)
+    { // No south wall
         // Move south
-        navigateMaze(x, y + 1, end_x, end_y); 
+        navigateMaze(x, y + 1, end_x, end_y, path, pathLength + 1, shortest_path_length, shortest_path);
     }
-    if(mazeGrid[x][y].eastWall == 0 && mazeGrid[x][y].visited != 2) { // No east wall
+    if (mazeGrid[x][y].eastWall == 0 && mazeGrid[x][y].visited != 2)
+    { // No east wall
         // Move east
-        navigateMaze(x + 1, y, end_x, end_y); 
+        navigateMaze(x + 1, y, end_x, end_y, path, pathLength + 1, shortest_path_length, shortest_path);
     }
-    if(mazeGrid[x][y].westWall == 0 && mazeGrid[x][y].visited != 2) { // No west wall
+    if (mazeGrid[x][y].westWall == 0 && mazeGrid[x][y].visited != 2)
+    { // No west wall
         // Move west
-        navigateMaze(x - 1, y, end_x, end_y); 
+        navigateMaze(x - 1, y, end_x, end_y, path, pathLength + 1, shortest_path_length, shortest_path);
     }
 
+    // Backtrack: Mark the current point as unvisited when exploring other paths
+    mazeGrid[x][y].nav_visited = 0;
 }
 
 bool pidUpdateCallback(struct repeating_timer *t)
@@ -107,12 +129,25 @@ bool pidUpdateCallback(struct repeating_timer *t)
 }
 
 void solveMaze() {
-    // int path[9][2] = {{1, 0}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {3, 3}, {3, 4}, {2, 4}, {2, 5}}; 
-    int path[9][2] = {{1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {3, 3}, {3, 4}, {3, 5}, {2, 5}};
+    // Initialize exploration path variables
+    struct Coordinates path[MAZE_WIDTH * MAZE_HEIGHT];
+    int pathLength = 0;
+
+    // Initialize variables to store the minimum path
+    int shortest_path_length = MAZE_WIDTH * MAZE_HEIGHT + 1; // Initialize to a value greater than the maximum possible path length
+    struct Coordinates shortest_path[MAZE_WIDTH * MAZE_HEIGHT];
+
+    // Find the shortest path using DFS
+    navigateMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y, path, pathLength, &shortest_path_length, shortest_path);
+
+    // int found_path[9][2] = {{1, 0}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {3, 3}, {3, 4}, {2, 4}, {2, 5}}; 
+    // int found_path[9][2] = {{1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {3, 3}, {3, 4}, {3, 5}, {2, 5}};
+    
+    // Initialise starting positions
     int currentX = STARTING_X;
     int currentY = STARTING_Y;
 
-    for (int i = 0; i < 9; ++i) {
+    for (int i = 0; i < shortest_path_length + 1; ++i) {
         if (navigationPosition != 0) {
             if (navigationPosition == -1) {
                 turnMotor(1);
@@ -123,8 +158,8 @@ void solveMaze() {
             navigationPosition = 0;
         }
 
-        int nextX = path[i][0];
-        int nextY = path[i][1];
+        int nextX = shortest_path[i].x;
+        int nextY = shortest_path[i].y;
 
         int deltaX = nextX - currentX;
         int deltaY = nextY - currentY;
