@@ -14,42 +14,40 @@
 #include "motor.h"
 #include "ssi.h"
 #include "cgi.h"
+#include "navigation.h"
 
-// Define maze conditions
+// Define maze conditions, starting and ending grid
 #define MAZE_WIDTH 4
 #define MAZE_HEIGHT 6
-
 #define STARTING_X 1
 #define STARTING_Y 5
-
 #define ENDING_X 2
 #define ENDING_Y 0
 
-// Struct for maze cell
-struct Cell
-{
-    int northWall; // -1 - unvisited, 0 - empty, 1 - wall
-    int southWall; // -1 - unvisited, 0 - empty, 1 - wall
-    int eastWall;  // -1 - unvisited, 0 - empty, 1 - wall
-    int westWall;  // -1 - unvisited, 0 - empty, 1 - wall
-    int visited;   // 0 - unvisited, 1 - visited, 2 - obstacle, 3 - barcode
-};
+// // Struct for maze cell
+// struct Cell
+// {
+//     int northWall; // -1 - unvisited, 0 - empty, 1 - wall
+//     int southWall; // -1 - unvisited, 0 - empty, 1 - wall
+//     int eastWall;  // -1 - unvisited, 0 - empty, 1 - wall
+//     int westWall;  // -1 - unvisited, 0 - empty, 1 - wall
+//     int visited;   // 0 - unvisited, 1 - visited, 2 - obstacle, 3 - barcode
+// };
 
-struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
+// struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
 struct repeating_timer pid_timer;
 
 // Global variables
-const char WIFI_SSID[] = "SINGTEL-6CAN";  // Wifi credentials
-const char WIFI_PASSWORD[] = "ser760172"; // Wifi credentials
+const char WIFI_SSID[] = "dinie";         // Wifi credentials
+const char WIFI_PASSWORD[] = "testest1";  // Wifi credentials
 int position = 0;                         // 0 - S, 1 - W, 2 - N, 3 - E
 int startCar = 0;                         // From CGI to toggle car start / stop
-
 int cellsLeft = MAZE_HEIGHT * MAZE_WIDTH; // Total numbers of cells to map
 bool wallDetected = false;                // Wall detection variable
 bool leftWallDetected = false;            // Wall detection variable
 bool rightWallDetected = false;           // Wall detection variable
-bool oneGrid = false;
 
+/*
 // Function to check if x, y is within maze boudaries
 int isValid(int x, int y)
 {
@@ -574,7 +572,7 @@ void firstPathAlgo(int current_x, int current_y)
 
     return;
 }
-
+*/
 // Function that is invoked upon a change in right IR sensor's input
 void callbacks(uint gpio, uint32_t events)
 {
@@ -604,7 +602,7 @@ void callbacks(uint gpio, uint32_t events)
         break;
     // Barcode sensor callback
     case IR_SENSOR_PIN:
-        barcode_callback(gpio);
+        barcode_callback(gpio, events);
         break;
     default:
         break;
@@ -691,8 +689,8 @@ void initAll()
     printf("8/9 - Magnetometer pins initialised\n");
     sleep_ms(1000);
 
-    initializeMazeGrid();
-    printf("9/9 - Maze grids initialised\n");
+    // initializeMazeGrid();
+    // printf("9/9 - Maze grids initialised\n");
 }
 
 void initInterrupts()
@@ -716,7 +714,7 @@ int main()
     // add_repeating_timer_ms(1000, pid_update_callback, NULL, &pid_timer);
 
     kalman_state *state = kalman_init(1, 100, 0, 0);
-    // double cm;
+    double cm;
 
     while (true)
     {
@@ -724,160 +722,17 @@ int main()
         {
             // Call pathfinding algorithm
             // firstPathAlgo(STARTING_X, STARTING_Y);
-            // hard_coded();
-            // moveGrids(4);
+            navigateMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);
+            solveMaze();
             // cancel_repeating_timer(&pid_timer);
             // sleep_ms(10000);
+            startCar = 0;
+        }
+        else
+        {
+            stopMotor();
         }
     }
 
     return 0;
 }
-
-/*
-* OLD MAIN
-int main() {
-    // Init all required
-    initAll();
-
-    // Initialise interrupts for needed sensors
-    gpio_set_irq_enabled_with_callback(L_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(R_ENCODER_OUT, GPIO_IRQ_EDGE_RISE, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(ECHOPIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(LEFT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(RIGHT_IR_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &callbacks);
-    gpio_set_irq_enabled_with_callback(IR_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &callbacks);
-
-    // Get speed and distance every second
-    // struct repeating_timer timer;
-    // add_repeating_timer_ms(10000, encoderCallback, NULL, &timer);
-    kalman_state *state = kalman_init(1, 100, 0, 0);
-    double cm;
-    mag_t mag;
-
-    while (1) {
-        // If car is set to start running from web server
-        if (startCar == 1) {
-            // Call pathfinding algorithm
-            // firstPathAlgo(mazeGrid);
-
-            // Move till touches a wall then stop for 2 seconds
-            wallDetected = false;
-            moveMotor(pwmL,pwmR);
-            while (!wallDetected || !obstacleDetected){
-                // Wait
-            }
-            stopMotor();
-            sleep_ms(2000);
-
-            // Get current angle
-            // read_magnetometer(&mag);
-            // int32_t angleTurned;
-            // int32_t initialAngle = get_angle(&mag);
-            // int32_t newAngle = initialAngle;
-            // int32_t target_angle;
-
-            // Turn right
-            // moveMotor(pwmL,pwmR);
-            turnMotor(1);
-            // turnRight();
-            // if (initialAngle < 90) {
-            //     target_angle = 270 + initialAngle;
-            //     printf("INITIAL ANGLE: %d, NEW ANGLE: %d, TARGET ANGLE: %d\n", initialAngle, newAngle, target_angle);
-            //     moveMotor(pwmL,pwmR);
-            //     while (newAngle <= initialAngle || newAngle > target_angle ) {
-            //         read_magnetometer(&mag);
-            //         newAngle = get_angle(&mag);
-            //         printf("initialAngle: %d, newAngle: %d\n", initialAngle, newAngle);
-            //         turnMotor(1);
-            //     }
-            // } else {
-            //     target_angle = initialAngle - 90;
-            //     printf("INITIAL ANGLE: %d, NEW ANGLE: %d, TARGET ANGLE: %d\n", initialAngle, newAngle, target_angle);
-            //     moveMotor(pwmL,pwmR);
-            //     while (newAngle >= target_angle ) {
-            //         read_magnetometer(&mag);
-            //         newAngle = get_angle(&mag);
-            //         printf("initialAngle: %d, newAngle: %d\n", initialAngle, newAngle);
-            //         turnMotor(1);
-            //     }
-            // }
-
-            // stopMotor();
-
-            // printf("Angle turned: %d\n", angleTurned);
-            // sleep_ms(2000);
-
-            // Move till touches a wall then stop for 2 seconds
-            wallDetected = false;
-            moveMotor(pwmL,pwmR);
-            while (!wallDetected){
-                // Wait
-            }
-            stopMotor();
-            sleep_ms(2000);
-
-            turnMotor(0);
-
-
-            // // Get current angle
-            // read_magnetometer(&mag);
-            // initialAngle = get_angle(&mag);
-
-            // // Turn left then stop for 2 seconds
-            // moveMotor(pwmL,pwmR);
-            // turnMotor(0);
-            // sleep_ms(500);
-            // stopMotor();
-
-            // // Get new angle and calculate difference
-            // read_magnetometer(&mag);
-            // newAngle = get_angle(&mag);
-            // angleTurned = newAngle - initialAngle;
-            // printf("Angle turned: %d\n", angleTurned);
-            // sleep_ms(2000);
-
-            // bool obstacle = false;
-            // // Move straight
-            // moveMotor(pwmL,pwmR);
-
-            // while (!obstacle) {
-            //     // Get distance from ultrasonic sensor
-            //     for (int i = 0; i < 10; i++) {
-            //         cm = getCm(state);
-            //     }
-            //     printf("Distance: %.2lf\n", cm);
-
-
-            //     // If there is an obstacle too close, stop motor and u-turn right
-            //     if (cm < 5) {
-            //         stopMotor();
-            //         sleep_ms(2000);
-            //         turnMotor(1);
-            //         sleep_ms(1200);
-            //         stopMotor();
-            //         obstacle = true;
-            //     }
-            // }
-        }
-    }
-
-    struct repeating_timer pid_timer;
-    add_repeating_timer_ms(10000,pid_update_callback,NULL,&pid_timer);
-
-    while (1) {
-        // If car is set to start running from web server
-        if (startCar == 1) {
-            // moveMotor(pwmL,pwmR));
-            printf("PWML IN MAIN: LEFT: %f, RIGHT: %f\n",pwmL,pwmR);
-            moveMotor(pwmL,pwmR);
-            sleep_ms(1500);
-        }
-        // Car is set to stop
-        else {
-            stopMotor();
-        }
-    }
-    return 0;
-}
-*/

@@ -14,6 +14,7 @@ target_include_directories(main PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/../irline/wallsensor
         ${CMAKE_CURRENT_LIST_DIR}/../irline/barcode 
         ${CMAKE_CURRENT_LIST_DIR}/../magnetometer
+        ${CMAKE_CURRENT_LIST_DIR}/../nav
         )
 
 target_compile_definitions(main PRIVATE
@@ -31,6 +32,7 @@ target_link_libraries(main
         wallsensor_lib
         barcode_lib
         magnetometer_lib
+        navigation_lib
         )
 
 # create map/bin/hex file etc.

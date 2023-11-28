@@ -14,6 +14,7 @@
 - Barcode Scanning and Recognition (all 3 sizes), and integration with car
 - Side wall detection
 - Optimisations
+- Navigation
 
 *2201014 Tng Jian Rong*
 - User Interface (controls, display of sensor data, map, coordinates)
