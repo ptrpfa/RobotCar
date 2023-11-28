@@ -11,6 +11,7 @@ volatile bool barcode_scan = false;
 
 /* Global Variables */
 extern volatile bool barcode_scan;
+volatile bool barcode_update = false;
 bool reverse_scan = false;                   // Boolean to check whether current scan direction is reversed or not
 bool start_scan = false;                     // Boolean to store current scan status, used to ignore initial change in state
 uint64_t last_state_change_time = 0;         // Variable to store the last time where the state changed (microseconds), used for measuring the time it takes to scan each bar
@@ -19,7 +20,7 @@ uint16_t count_scanned_bar = 0;              // Count of number of bars scanned
 uint16_t count_scanned_char = 0;             // Count of number of characters scanned, used to get target character between delimiters
 char scanned_code[CODE_LENGTH + 1] = "";     // String to store scanned barcode binary representation
 // char barcode_char = ERROR_CHAR;
-char barcode_char = 'k';
+char barcode_char = 'K';
 
 /* Function Definitions */
 // Function to setup barcode pin to digital
@@ -277,6 +278,7 @@ void read_barcode()
                         // barcode_char = ERROR_CHAR;
                         // Reset number of characters scanned
                         count_scanned_char = 0;
+                        barcode_update = true;
                     }
                     break;
                 default:

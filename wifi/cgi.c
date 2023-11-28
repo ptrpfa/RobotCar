@@ -58,6 +58,26 @@ const char *cgi_barcode_handler(int iIndex, int iNumParams, char *pcParam[], cha
     return "/index.shtml";
 }
 
+const char *cgi_nav_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
+{
+    // Check if a request for the engine has been made (/nav.cgi?nav=x)
+    if (strcmp(pcParam[0], "nav") == 0)
+    {
+        // Look at the argument to check if the engine is to be started (x=1) or stopped (x=0)
+        if (strcmp(pcValue[0], "1") == 0)
+        {
+            // Start navigation
+        }
+        else if (strcmp(pcValue[0], "1") == 1)
+        {
+            // Stop navigation
+        }
+    }
+
+    // Send the index page back to the user
+    return "/index.shtml";
+}
+
 // tCGI Struct
 // Fill this with all of the CGI requests and their respective handlers
 static const tCGI cgi_handlers[] = {
@@ -65,8 +85,10 @@ static const tCGI cgi_handlers[] = {
      "/led.cgi", cgi_led_handler},
     {// Html request for "/engine.cgi" triggers cgi_engine_handler
      "/engine.cgi", cgi_engine_handler},
-    {// Html request for "/engine.cgi" triggers cgi_engine_handler
+    {// Html request for "/barcode.cgi" triggers cgi_barcode_handler
      "/barcode.cgi", cgi_barcode_handler},
+    {// Html request for "/nav.cgi" triggers cgi_nav_handler
+     "/nav.cgi", cgi_nav_handler},
 };
 
 void cgi_init(void)

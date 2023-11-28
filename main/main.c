@@ -231,6 +231,25 @@ bool pid_update_callback(struct repeating_timer *t)
     return true;
 }
 
+void updateBarcode(int new_position, int x, int y, int grids_moved)
+{
+    switch (new_position)
+    {
+    case 0: // South
+        mazeGrid[x][y + grids_moved] = 3;
+        break;
+    case 1: // West
+        mazeGrid[x - grids_moved][y] = 3;
+        break;
+    case 2: // North
+        mazeGrid[x][y - grids_moved] = 3;
+        break;
+    case 3: // East
+        mazeGrid[x + grids_moved][y] = 3;
+        break;
+    }
+}
+
 void firstPathAlgo(int current_x, int current_y)
 {
     if (cellsLeft == 0)
@@ -242,24 +261,32 @@ void firstPathAlgo(int current_x, int current_y)
 
     add_repeating_timer_ms(100, pid_update_callback, NULL, &pid_timer);
     leftWallDetected = false;
-    moveMotor(pwmL, pwmR);
+    rightWallDetected = false;
+    obstacleDetected = false;
+
     while (!(leftWallDetected && rightWallDetected) && !obstacleDetected)
     {
-        // Wait
+        moveMotor(pwmL, pwmR);
+        // Constantly check if barcode detected
+        if (barcode_update)
+        {
+            // Get number of grids moved but dont reset
+            uint32_t grids_moved = getGridsMoved(false);
+            updateBarcode(position, current_x, current_y, grids_moved);
+        }
+        sleep_ms(50);
     }
     cancel_repeating_timer(&pid_timer);
 
     // Encountered wall, stop
     stopMotor();
-    leftWallDetected = false;
-    rightWallDetected = false;
-    obstacleDetected = false;
 
     uint32_t grids_moved = getGridsMoved(true);
     printf("GRIDS MOVED: %d\n", grids_moved);
 
     sleep_ms(2000);
 
+    // Update the car's current position
     switch (position)
     {
     // South
@@ -305,6 +332,10 @@ void firstPathAlgo(int current_x, int current_y)
     {
         updateWall(1, current_x, current_y, position);
     }
+
+    leftWallDetected = false;
+    rightWallDetected = false;
+    obstacleDetected = false;
 
     // Check if wall 90 degrees to the right is checked
     if (wallIsChecked(current_x, current_y, 1) == -1)

@@ -158,10 +158,10 @@ void moveGrids(int number_of_grids)
 {
     startTracking(number_of_grids);
 
-    moveMotor(pwmL, pwmR);
     while (!completeMovement)
     {
-        // wait
+        moveMotor(pwmL, pwmR);
+        sleep_ms(50);
     }
 
     // Stop once reached target grids
