@@ -19,6 +19,7 @@
 // Define maze conditions, starting and ending grid
 #define MAZE_WIDTH 4
 #define MAZE_HEIGHT 6
+
 // Start: (1, 0)
 #define STARTING_X 1
 #define STARTING_Y 0
@@ -50,7 +51,6 @@ bool wallDetected = false;                // Wall detection variable
 bool leftWallDetected = false;            // Wall detection variable
 bool rightWallDetected = false;           // Wall detection variable
 
-/*
 // Function to check if x, y is within maze boudaries
 int isValid(int x, int y)
 {
@@ -80,6 +80,7 @@ void updateObstacle(int x, int y, int position)
     }
     return;
 }
+
 void checkIfVisited(int x, int y)
 {
     if (mazeGrid[x][y].visited == 0 &&
@@ -220,13 +221,6 @@ void updateWall(int wall, int x, int y, int new_position)
     checkIfVisited(x, y);
 }
 
-bool pid_update_callback(struct repeating_timer *t)
-{
-    encoderCallback();
-    update_motor_speed();
-    return true;
-}
-
 void updateBarcode(int new_position, int x, int y, int grids_moved)
 {
     switch (new_position)
@@ -246,6 +240,15 @@ void updateBarcode(int new_position, int x, int y, int grids_moved)
     }
 }
 
+// Function for PID timer callback
+bool pid_update_callback(struct repeating_timer *t)
+{
+    encoderCallback();
+    update_motor_speed();
+    return true;
+}
+
+// Function to map out the entire maze
 void firstPathAlgo(int current_x, int current_y)
 {
     if (cellsLeft == 0)
@@ -575,7 +578,7 @@ void firstPathAlgo(int current_x, int current_y)
 
     return;
 }
-*/
+
 // Function that is invoked upon a change in right IR sensor's input
 void callbacks(uint gpio, uint32_t events)
 {
@@ -696,6 +699,7 @@ void initAll()
     // printf("9/9 - Maze grids initialised\n");
 }
 
+// Function to init all interrupts
 void initInterrupts()
 {
     // Initialise interrupts for needed sensors
@@ -715,7 +719,6 @@ int main()
 
     // Init PID
     // add_repeating_timer_ms(1000, pid_update_callback, NULL, &pid_timer);
-
     kalman_state *state = kalman_init(1, 100, 0, 0);
     double cm;
 
@@ -726,10 +729,10 @@ int main()
             moveMotor(pwmL, pwmR);
 
             // // Call pathfinding algorithm
-            // // firstPathAlgo(STARTING_X, STARTING_Y);
+            // firstPathAlgo(STARTING_X, STARTING_Y);
 
             // // Revert car to start position
-            // // solveMaze(ENDING_X, ENDING_Y, STARTING_X, STARTING_Y);
+            // solveMaze(ENDING_X, ENDING_Y, STARTING_X, STARTING_Y);
             
             // // Solve maze
             // solveMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);

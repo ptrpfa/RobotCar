@@ -16,7 +16,7 @@
 #define ENCODER_CIRCUMFERENCE 8.5
 #define WHEEL_CIRCUMFERENCE 22
 
-// Global variable declaration
+// External variables
 extern volatile bool completeMovement;
 extern volatile uint32_t oscillation;
 extern volatile float actual_speed_L;

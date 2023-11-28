@@ -30,6 +30,7 @@ struct Coordinates
     int y;
 };
 
+// External variables
 extern struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
 extern bool isMazeMapped;
 
