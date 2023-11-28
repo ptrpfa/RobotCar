@@ -87,7 +87,7 @@ void moveMotor(float new_pwmL, float new_pwmR)
 {
     printf("UPDATING MOTOR : LEFT - %f, RIGHT - %f\n", new_pwmL, new_pwmR);
 
-    stopMotor();
+    // stopMotor();
     sleep_ms(50);
     // Set both motors to output high for desired PWM
     // Get PWM slice and channel for ENA and ENB
@@ -177,8 +177,8 @@ void turnMotor(int direction)
 
     oscillation = 0;
 
-    int targetNotchCount = 140 * ENCODER_NOTCH / 360;
-    moveMotor(1900, 1900);
+    int targetNotchCount = 290 * ENCODER_NOTCH / 360;
+    moveMotor(3125, 3125);
 
     // Motor to turn left
     if (direction == 0)
@@ -213,6 +213,7 @@ void turnMotor(int direction)
     }
 
     stopMotor();
+    sleep_ms(50);
 }
 
 // Function to compute PID control signal

@@ -604,7 +604,7 @@ void callbacks(uint gpio, uint32_t events)
         break;
     // Barcode sensor callback
     case IR_SENSOR_PIN:
-        barcode_callback(gpio);
+        barcode_callback(gpio, events);
         break;
     default:
         break;

@@ -107,7 +107,8 @@ bool pidUpdateCallback(struct repeating_timer *t)
 }
 
 void solveMaze() {
-    int path[9][2] = {{1, 0}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {3, 3}, {3, 4}, {2, 4}, {2, 5}};
+    // int path[9][2] = {{1, 0}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {3, 3}, {3, 4}, {2, 4}, {2, 5}}; 
+    int path[9][2] = {{1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {3, 3}, {3, 4}, {3, 5}, {2, 5}};
     int currentX = STARTING_X;
     int currentY = STARTING_Y;
 
@@ -115,7 +116,7 @@ void solveMaze() {
         if (navigationPosition != 0) {
             if (navigationPosition == -1) {
                 turnMotor(1);
-            }
+            }   
             else if (navigationPosition == 1) {
                 turnMotor(0);
             }
@@ -137,7 +138,7 @@ void solveMaze() {
             navigationPosition -= 1;
         } else if (deltaX == -1) {
             // Move right
-            turnMotor(0);
+            turnMotor(1);
             moveGrids(1);
             navigationPosition += 1;
         } else if (deltaY == 1) {
@@ -154,6 +155,15 @@ void solveMaze() {
     }
 
     // Arrived at the destination
+    if (navigationPosition != 0) {
+        if (navigationPosition == -1) {
+            turnMotor(1);
+        }   
+        else if (navigationPosition == 1) {
+            turnMotor(0);
+        }
+        navigationPosition = 0;
+    }
     stopMotor();
 }
 

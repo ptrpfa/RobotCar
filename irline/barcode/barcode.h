@@ -23,6 +23,6 @@ void barcode_callback(uint gpio, uint32_t events); // Interrupt callback functio
 void init_barcode();
 
 extern char barcode_char;       // Character variable to store scanned and parsed barcode character
-extern volatile barcode_update; // Boolean to indicate when barcode char is updated
+extern volatile bool barcode_update; // Boolean to indicate when barcode char is updated
 
 #endif
