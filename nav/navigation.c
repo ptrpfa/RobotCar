@@ -127,6 +127,9 @@ void navigateMaze(int x, int y, int end_x, int end_y, struct Coordinates path[],
                 shortest_path[i] = path[i];
             }
         }
+
+        // Backtrack: Mark the current point as unvisited when exploring other paths
+        mazeGrid[x][y].nav_visited = 0;
         return;
     }
 

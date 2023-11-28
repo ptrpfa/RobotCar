@@ -29,7 +29,7 @@ struct Cell
 };
 
 // Initialise cells (hardcoded for now, to be populated by mapping algorithm)
-struct Cell mazeGridSecond[MAZE_WIDTH][MAZE_HEIGHT] = {
+struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
     // (0, 0) to (0, 5)
     {  // N, S, E, W, Visited
         { 1, 0, 1, 1, 1, 0},   // Array index: (0, 0) 
@@ -70,7 +70,7 @@ struct Cell mazeGridSecond[MAZE_WIDTH][MAZE_HEIGHT] = {
 };
 
 // Initialise cells (hardcoded for now, to be populated by mapping algorithm)
-struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
+struct Cell mazeGridSecond[MAZE_WIDTH][MAZE_HEIGHT] = {
     // (0, 0) to (0, 5)
     {  // N, S, E, W, Visited
         { 1, 1, 0, 1, 1, 0},   // Array index: (0, 0) 
@@ -145,6 +145,9 @@ void navigateMaze(int x, int y, int end_x, int end_y, struct Coordinates path[],
                 shortest_path[i] = path[i];
             }
         }
+
+        // Backtrack: Mark the current point as unvisited when exploring other paths
+        mazeGrid[x][y].nav_visited = 0;
         return;
     }
 
