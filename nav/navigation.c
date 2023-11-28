@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-// Define maze conditions
-#define MAZE_WIDTH 4
-#define MAZE_HEIGHT 6
+#include "navigation.h"
+#include "../motor/motor.h"
+#include "../encoder/encoder.h"
 
 // Start: (1, 0)
 #define STARTING_X 1
@@ -12,21 +11,6 @@
 // End: (1, 0)
 #define ENDING_X 2
 #define ENDING_Y 5
-
-// Struct for maze cell
-struct Cell
-{
-    int northWall; // -1 - unvisited, 0 - empty, 1 - wall
-    int southWall; // -1 - unvisited, 0 - empty, 1 - wall
-    int eastWall;  // -1 - unvisited, 0 - empty, 1 - wall
-    int westWall;  // -1 - unvisited, 0 - empty, 1 - wall
-
-    // Unused
-    int visited;   // 0 - unvisited, 1 - visited, 2 - obstacle, 3 - barcode
-    
-    // Navigation
-    int nav_visited; // 0 - unvisted, 1 - visited
-};
 
 // Initialise cells (hardcoded for now, to be populated by mapping algorithm)
 struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
@@ -68,6 +52,10 @@ struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
     },
     
 };
+
+bool isMazeMapped = false;
+int navigationPosition = 0; 
+struct repeating_timer pidTimer;
 
 void navigateMaze(int x, int y, int end_x, int end_y)
 {
@@ -111,10 +99,72 @@ void navigateMaze(int x, int y, int end_x, int end_y)
 
 }
 
-int main() {
+bool pidUpdateCallback(struct repeating_timer *t)
+{
+    encoderCallback();
+    update_motor_speed();
+    return true;
+}
 
-    // Solve maze and print shortest path
+void solveMaze() {
+    int path[9][2] = {{1, 0}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {3, 3}, {3, 4}, {2, 4}, {2, 5}};
+    int currentX = STARTING_X;
+    int currentY = STARTING_Y;
+
+    for (int i = 0; i < 9; ++i) {
+        if (navigationPosition != 0) {
+            if (navigationPosition == -1) {
+                turnMotor(1);
+            }
+            else if (navigationPosition == 1) {
+                turnMotor(0);
+            }
+            navigationPosition = 0;
+        }
+
+        int nextX = path[i][0];
+        int nextY = path[i][1];
+
+        int deltaX = nextX - currentX;
+        int deltaY = nextY - currentY;
+
+
+        add_repeating_timer_ms(100, pidUpdateCallback, NULL, &pidTimer);
+        if (deltaX == 1) {
+            // Move left
+            turnMotor(0);
+            moveGrids(1);
+            navigationPosition -= 1;
+        } else if (deltaX == -1) {
+            // Move right
+            turnMotor(0);
+            moveGrids(1);
+            navigationPosition += 1;
+        } else if (deltaY == 1) {
+            // Move down
+            moveGrids(1);
+        } else if (deltaY == -1) {
+            // Move up
+        }
+
+        currentX = nextX;
+        currentY = nextY;
+        sleep_ms(2000);
+        cancel_repeating_timer(&pidTimer);
+    }
+
+    // Arrived at the destination
+    stopMotor();
+}
+
+/*
+int main() {
+    // Find shortest path
     navigateMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);
+    
+    // Solve the maze according to shortest path found
+    solveMaze();
 
     return 0;
 }
+*/
