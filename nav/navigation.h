@@ -22,11 +22,19 @@ struct Cell
     // Navigation
     int nav_visited; // 0 - unvisted, 1 - visited
 };
+
+// Struct to represent a point in the maze
+struct Coordinates
+{
+    int x;
+    int y;
+};
+
 extern struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
 extern bool isMazeMapped;
 
 // Functions for motors
-void navigateMaze(int x, int y, int end_x, int end_y);
+void navigateMaze(int x, int y, int end_x, int end_y, struct Coordinates path[], int pathLength, int *shortest_path_length, struct Coordinates *shortest_path);
 bool pid_update_callback(struct repeating_timer *t);
 void solveMaze();
 

@@ -13,42 +13,84 @@
 #define ENDING_Y 5
 
 // Initialise cells (hardcoded for now, to be populated by mapping algorithm)
+// struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
+//     // (0, 0) to (0, 5)
+//     {  // N, S, E, W, Visited
+//         { 1, 0, 1, 1, 1, 0},   // Array index: (0, 0) 
+//         { 0, 0, 0, 1, 1, 0},   // Array index: (0, 1) 
+//         { 0, 0, 1, 1, 1, 0},   // Array index: (0, 2) 
+//         { 0, 0, 1, 1, 1, 0},   // Array index: (0, 3) 
+//         { 0, 0, 0, 1, 1, 0},   // Array index: (0, 4) 
+//         { 0, 1, 1, 1, 1, 0},   // Array index: (0, 5) 
+//     },
+//     // (1, 0) to (1, 5)
+//     {  // N, S, E, W, Visited
+//         { 0, 0, 0, 1, 1, 0},   // Array index: (1, 0) 
+//         { 0, 1, 1, 0, 1, 0},   // Array index: (1, 1) 
+//         { 1, 0, 1, 1, 1, 0},   // Array index: (1, 2) 
+//         { 0, 0, 0, 1, 1, 0},   // Array index: (1, 3) 
+//         { 0, 1, 1, 0, 1, 0},   // Array index: (1, 4) 
+//         { 1, 1, 0, 1, 1, 0},   // Array index: (1, 5) 
+//     },
+//     // (2, 0) to (2, 5)
+//     {  // N, S, E, W, Visited
+//         { 1, 0, 1, 0, 1, 0},   // Array index: (2, 0) 
+//         { 0, 0, 0, 1, 1, 0},   // Array index: (2, 1) 
+//         { 0, 0, 1, 1, 1, 0},   // Array index: (2, 2) 
+//         { 0, 1, 0, 0, 1, 0},   // Array index: (2, 3) 
+//         { 1, 0, 0, 1, 1, 0},   // Array index: (2, 4) 
+//         { 0, 0, 1, 0, 1, 0},   // Array index: (2, 5) 
+//     },
+//     // (3, 0) to (3, 5)
+//     {  // N, S, E, W, Visited
+//         { 1, 0, 1, 1, 1, 0},   // Array index: (3, 0) 
+//         { 0, 0, 1, 0, 1, 0},   // Array index: (3, 1) 
+//         { 0, 1, 1, 1, 1, 0},   // Array index: (3, 2) 
+//         { 1, 0, 1, 0, 1, 0},   // Array index: (3, 3) 
+//         { 0, 0, 1, 0, 1, 0},   // Array index: (3, 4) 
+//         { 0, 1, 1, 1, 1, 0},   // Array index: (3, 5) 
+//     },
+    
+// };
+
+
+// Initialise cells (hardcoded for now, to be populated by mapping algorithm)
 struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
     // (0, 0) to (0, 5)
     {  // N, S, E, W, Visited
-        { 1, 0, 1, 1, 1, 0},   // Array index: (0, 0) 
-        { 0, 0, 0, 1, 1, 0},   // Array index: (0, 1) 
-        { 0, 0, 1, 1, 1, 0},   // Array index: (0, 2) 
-        { 0, 0, 1, 1, 1, 0},   // Array index: (0, 3) 
-        { 0, 0, 0, 1, 1, 0},   // Array index: (0, 4) 
+        { 1, 1, 0, 1, 1, 0},   // Array index: (0, 0) 
+        { 1, 0, 1, 1, 1, 0},   // Array index: (0, 1) 
+        { 0, 1, 0, 1, 1, 0},   // Array index: (0, 2) 
+        { 1, 1, 0, 1, 1, 0},   // Array index: (0, 3) 
+        { 1, 0, 0, 1, 1, 0},   // Array index: (0, 4) 
         { 0, 1, 1, 1, 1, 0},   // Array index: (0, 5) 
     },
     // (1, 0) to (1, 5)
     {  // N, S, E, W, Visited
-        { 0, 0, 0, 1, 1, 0},   // Array index: (1, 0) 
-        { 0, 1, 1, 0, 1, 0},   // Array index: (1, 1) 
-        { 1, 0, 1, 1, 1, 0},   // Array index: (1, 2) 
-        { 0, 0, 0, 1, 1, 0},   // Array index: (1, 3) 
-        { 0, 1, 1, 0, 1, 0},   // Array index: (1, 4) 
-        { 1, 1, 0, 1, 1, 0},   // Array index: (1, 5) 
+        { 0, 0, 0, 0, 1, 0},   // Array index: (1, 0) 
+        { 0, 1, 1, 1, 1, 0},   // Array index: (1, 1) 
+        { 1, 1, 0, 0, 1, 0},   // Array index: (1, 2) 
+        { 1, 1, 0, 0, 1, 0},   // Array index: (1, 3) 
+        { 1, 0, 1, 0, 1, 0},   // Array index: (1, 4) 
+        { 0, 1, 0, 1, 1, 0},   // Array index: (1, 5) 
     },
     // (2, 0) to (2, 5)
     {  // N, S, E, W, Visited
-        { 1, 0, 1, 0, 1, 0},   // Array index: (2, 0) 
+        { 1, 0, 0, 0, 1, 0},   // Array index: (2, 0) 
         { 0, 0, 0, 1, 1, 0},   // Array index: (2, 1) 
-        { 0, 0, 1, 1, 1, 0},   // Array index: (2, 2) 
-        { 0, 1, 0, 0, 1, 0},   // Array index: (2, 3) 
-        { 1, 0, 0, 1, 1, 0},   // Array index: (2, 4) 
-        { 0, 0, 1, 0, 1, 0},   // Array index: (2, 5) 
+        { 0, 1, 1, 0, 1, 0},   // Array index: (2, 2) 
+        { 1, 1, 0, 0, 1, 0},   // Array index: (2, 3) 
+        { 1, 0, 1, 1, 1, 0},   // Array index: (2, 4) 
+        { 0, 0, 0, 0, 1, 0},   // Array index: (2, 5) 
     },
     // (3, 0) to (3, 5)
     {  // N, S, E, W, Visited
-        { 1, 0, 1, 1, 1, 0},   // Array index: (3, 0) 
-        { 0, 0, 1, 0, 1, 0},   // Array index: (3, 1) 
-        { 0, 1, 1, 1, 1, 0},   // Array index: (3, 2) 
-        { 1, 0, 1, 0, 1, 0},   // Array index: (3, 3) 
-        { 0, 0, 1, 0, 1, 0},   // Array index: (3, 4) 
-        { 0, 1, 1, 1, 1, 0},   // Array index: (3, 5) 
+        { 1, 1, 1, 0, 1, 0},   // Array index: (3, 0) 
+        { 1, 0, 1, 0, 1, 0},   // Array index: (3, 1) 
+        { 0, 0, 1, 1, 1, 0},   // Array index: (3, 2) 
+        { 0, 0, 1, 0, 1, 0},   // Array index: (3, 3) 
+        { 0, 0, 1, 1, 1, 0},   // Array index: (3, 4) 
+        { 0, 1, 1, 0, 1, 0},   // Array index: (3, 5) 
     },
     
 };
@@ -56,13 +98,6 @@ struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {
 bool isMazeMapped = false;
 int navigationPosition = 0; 
 struct repeating_timer pidTimer;
-
-// Struct to represent a point in the maze
-struct Coordinates
-{
-    int x;
-    int y;
-};
 
 // Recursive function to find the shortest path
 void navigateMaze(int x, int y, int end_x, int end_y, struct Coordinates path[], int pathLength, int *shortest_path_length, struct Coordinates *shortest_path)
@@ -128,6 +163,7 @@ bool pidUpdateCallback(struct repeating_timer *t)
     return true;
 }
 
+// Solve 
 void solveMaze() {
     // Initialize exploration path variables
     struct Coordinates path[MAZE_WIDTH * MAZE_HEIGHT];
