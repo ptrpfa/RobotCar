@@ -41,8 +41,8 @@
 struct repeating_timer pid_timer;
 
 // Global variables
-const char WIFI_SSID[] = "dinie";         // Wifi credentials
-const char WIFI_PASSWORD[] = "testest1";  // Wifi credentials
+const char WIFI_SSID[] = "P";         // Wifi credentials
+const char WIFI_PASSWORD[] = "embedded";  // Wifi credentials
 int position = 0;                         // 0 - S, 1 - W, 2 - N, 3 - E
 int startCar = 0;                         // From CGI to toggle car start / stop
 int cellsLeft = MAZE_HEIGHT * MAZE_WIDTH; // Total numbers of cells to map
@@ -720,20 +720,22 @@ int main()
     double cm;
 
     while (true)
-    {
+    {   
         if (startCar == 1)
-        {
-            // Call pathfinding algorithm
-            // firstPathAlgo(STARTING_X, STARTING_Y);
+        {   
+            moveMotor(pwmL, pwmR);
 
-            // Revert car to start position
-            // solveMaze(ENDING_X, ENDING_Y, STARTING_X, STARTING_Y);
+            // // Call pathfinding algorithm
+            // // firstPathAlgo(STARTING_X, STARTING_Y);
+
+            // // Revert car to start position
+            // // solveMaze(ENDING_X, ENDING_Y, STARTING_X, STARTING_Y);
             
-            // Solve maze
-            solveMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);
-            // cancel_repeating_timer(&pid_timer);
-            // sleep_ms(10000);
-            startCar = 0;
+            // // Solve maze
+            // solveMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);
+            // // cancel_repeating_timer(&pid_timer);
+            // // sleep_ms(10000);
+            // startCar = 0;
         }
         else
         {

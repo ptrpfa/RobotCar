@@ -122,7 +122,7 @@ void moveMotor(float new_pwmL, float new_pwmR)
 // Function to move backward
 void reverseMotor(float new_pwmL, float new_pwmR)
 {
-    stopMotor();
+    // stopMotor();
     sleep_ms(50);
 
     pwm_set_chan_level(pwm_gpio_to_slice_num(L_MOTOR_ENA), pwm_gpio_to_channel(L_MOTOR_ENA), new_pwmL);
@@ -161,6 +161,21 @@ void moveGrids(int number_of_grids)
     while (!completeMovement)
     {
         moveMotor(pwmL, pwmR);
+        sleep_ms(50);
+    }
+
+    // Stop once reached target grids
+    stopMotor();
+}
+
+// Function to move forward for a set number of grids
+void reverseGrids(int number_of_grids)
+{
+    startTracking(number_of_grids);
+
+    while (!completeMovement)
+    {
+        reverseMotor(pwmL, pwmR);
         sleep_ms(50);
     }
 
