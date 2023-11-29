@@ -122,6 +122,37 @@ The other components' flowcharts are illustrated below, in no particular executi
 **Wiring Diagram**
 ![Block Diagram](docs/diagrams/wiring_diagram.png)
 
+### Project Structure
+The program entrypoint for this project resides in the `main.c` file. References are made by this program to functions and structs stored in the individual components' driver code via libraries enabled by these codes' `CMakeLists.txt` file.
+
+```
+docs/ (documentation images)
+
+encoder/ (driver code for wheel encoders)
+
+irline/ (driver code for barcode decoding and wall detection)
+
+magnetometer/ (driver code for magnetometer and orientation)
+
+main/ (main program code)
+
+motor/ (driver code for the motors and PID controller)
+
+nav/ (code for navigation algorithms to traverse the map within the shortest amount of time)
+
+ultrasonic/ (code for ultrasonic sensor obstacle detection)
+
+wifi/ (code for SSI and CGI and web server)
+
+README.md (this file)
+
+Build files:
+CMakeLists.txt
+FreeRTOS_Kernel_import.cmake
+pico_extras_import_optional.cmake
+pico_sdk_import.cmake
+```
+
 ### Getting Started
 ---
 1. Ensure that all the necessary hardware components are connected to the correct pins on the Raspberry Pi Pico W, and configured properly. Your final car should look something like this:
@@ -130,5 +161,7 @@ The other components' flowcharts are illustrated below, in no particular executi
 3. Flash your Raspberry Pi Pico W with the generated `.uf2` file!
 4. Place the car on a maze map! You can generate a map from [here](https://www.mazegenerator.net/). Your map should look something like this:
     ![Map](docs/maze_map.png)
-5. On a browser, navigate to the car's IP address, then click start!
+5. Using an IP scanner, find the IP address of your Raspberry Pi Pico!
+6. On a device connected to the same network as the Pi, open up a browser and navigate to the car's IP address, then click start! You can test that the car functions as intended by using the `ON LED` and `OFF LED` buttons for debugging.
+    ![UI](docs/ui.png)
 6. Let the car run! 🏎️
