@@ -1,16 +1,11 @@
+// Shortest path algorithm to complete maze
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "navigation.h"
 #include "../../motor/motor.h"
 #include "../../encoder/encoder.h"
-
-// Start: (1, 0)
-#define STARTING_X 1
-#define STARTING_Y 0
-
-// End: (2, 5)
-#define ENDING_X 2
-#define ENDING_Y 5
+#include "../mapping/mapping.h"
 
 // Initialise cells (hardcoded for now, to be populated by mapping algorithm)
 // struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT] = {

@@ -4,24 +4,17 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 
-// Define maze conditions
+// Define maze conditions, starting and ending grid
 #define MAZE_WIDTH 4
 #define MAZE_HEIGHT 6
 
-// Struct for maze cell
-struct Cell
-{
-    int northWall; // -1 - unvisited, 0 - empty, 1 - wall
-    int southWall; // -1 - unvisited, 0 - empty, 1 - wall
-    int eastWall;  // -1 - unvisited, 0 - empty, 1 - wall
-    int westWall;  // -1 - unvisited, 0 - empty, 1 - wall
+// Start: (1, 0)
+#define STARTING_X 1
+#define STARTING_Y 0
 
-    // Unused
-    int visited;   // 0 - unvisited, 1 - visited, 2 - obstacle, 3 - barcode
-    
-    // Navigation
-    int nav_visited; // 0 - unvisted, 1 - visited
-};
+// End: (2, 5)
+#define ENDING_X 2
+#define ENDING_Y 5
 
 // Struct to represent a point in the maze
 struct Coordinates
@@ -31,12 +24,11 @@ struct Coordinates
 };
 
 // External variables
-extern struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
 extern bool isMazeMapped;
 
 // Functions for motors
 void navigateMaze(int x, int y, int end_x, int end_y, struct Coordinates path[], int pathLength, int *shortest_path_length, struct Coordinates *shortest_path);
 bool pidUpdateCallback(struct repeating_timer *t);
-void solveMaze();
+void solveMaze(int start_x, int start_y, int end_x, int end_y);
 
 #endif

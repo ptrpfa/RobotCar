@@ -1,4 +1,4 @@
-// Main program
+// First path algorithm to map maze
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,6 @@
 #include "../../ultrasonic/ultrasonic.h"
 #include "../../irline/wallsensor/wallsensor.h"
 #include "../../irline/barcode/barcode.h"
-#include "../navigation/navigation.h"
 
 kalman_state *state; // kalman state for ultrasonic
 
@@ -400,6 +399,7 @@ void initializeMazeGrid()
             mazeGrid[x][y].southWall = (y == (MAZE_HEIGHT - 1) ? 1 : -1);
 
             mazeGrid[x][y].visited = 0;
+            mazeGrid[x][y].nav_visited = 0;
         }
     }
 }
@@ -409,6 +409,7 @@ void initializeKalmanState()
 {
     state = kalman_init(1, 100, 0, 0);
 }
+
 /*
 int main()
 {

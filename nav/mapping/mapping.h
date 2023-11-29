@@ -18,6 +18,21 @@
 
 struct repeating_timer pid_timer;
 
+// Struct for maze cell
+struct Cell
+{
+    int northWall; // -1 - unvisited, 0 - empty, 1 - wall
+    int southWall; // -1 - unvisited, 0 - empty, 1 - wall
+    int eastWall;  // -1 - unvisited, 0 - empty, 1 - wall
+    int westWall;  // -1 - unvisited, 0 - empty, 1 - wall
+
+    // Unused
+    int visited;   // 0 - unvisited, 1 - visited, 2 - obstacle, 3 - barcode
+    
+    // Navigation
+    int nav_visited; // 0 - unvisted, 1 - visited
+};
+
 typedef enum
 {
     SOUTH = 0,
@@ -25,6 +40,9 @@ typedef enum
     NORTH = 2,
     EAST = 3
 } Direction;
+
+// External variables
+extern struct Cell mazeGrid[MAZE_WIDTH][MAZE_HEIGHT];
 
 // Global variables
 int position = SOUTH;                       // 0 - S, 1 - W, 2 - N, 3 - E

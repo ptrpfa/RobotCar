@@ -1,6 +1,6 @@
 #include "ssi.h"
 #include "barcode.h"
-#include "navigation.h"
+#include "mapping.h"
 
 const char *ssi_tags[] = {"volt", "temp", "led", "width", "height", "grid1", "grid2", "grid3", "grid4", "grid5", "bc"};
 char formatted_map[5][192];

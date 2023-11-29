@@ -7,6 +7,7 @@ target_include_directories(mapping PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/../../ultrasonic
     ${CMAKE_CURRENT_LIST_DIR}/../../irline/wallsensor
     ${CMAKE_CURRENT_LIST_DIR}/../../irline/barcode 
+    ${CMAKE_CURRENT_LIST_DIR}/../navigation
     )
 
 # pull in common dependencies and additional pwm hardware support
@@ -19,6 +20,7 @@ target_link_libraries(mapping
         ultrasonic_lib
         wallsensor_lib
         barcode_lib
+        navigation_lib
         )
 
 # enable usb output, disable uart output
@@ -42,6 +44,7 @@ target_link_libraries(mapping_lib
     ultrasonic_lib
     wallsensor_lib
     barcode_lib
+    navigation_lib
     )
 
 # create map/bin/hex file etc.
