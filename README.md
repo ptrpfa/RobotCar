@@ -25,17 +25,20 @@
 - Ultrasonic Sensor
 - Obstacle detection with integrated Kalman Filter, and integration with car
 - Navigation
+- Mapping of maze (obstacle, barcode, walls)
 
 *2200920 Colin Ng Kar Jun*
 - User Interface (controls, display of sensor data, map, coordinates)
 - Magnetometer
 - Sensor Fusion
+- Integration of car movement from one grid to another (orientation of car, movement of car)
 
 *2200936 Muhammad Nur Dinie Bin Aziz*
 - Wheel Encoder, Motor, Motor Controller
 - Integration of car movement
 - Assembly of car and integration of different components together
 - Navigation algorithm
+- Integration of car movement from one grid to another (orientation of car, movement of car)
 
 ### Project Description
 ---
