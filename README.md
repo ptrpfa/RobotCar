@@ -164,4 +164,4 @@ pico_sdk_import.cmake
 5. Using an IP scanner, find the IP address of your Raspberry Pi Pico!
 6. On a device connected to the same network as the Pi, open up a browser and navigate to the car's IP address, then click start! You can test that the car functions as intended by using the `ON LED` and `OFF LED` buttons for debugging.
     ![UI](docs/ui.png)
-6. Let the car run! 🏎️
+6. Let the car run by clicking the `Start Car` button 🏎️! You can click on the other buttons to start navigation and reset barcode scans (if any error occurred during scanning) as well.
