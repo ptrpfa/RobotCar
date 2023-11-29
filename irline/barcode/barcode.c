@@ -237,7 +237,7 @@ void read_barcode()
                         // Reset scan direction
                         reverse_scan = false;
                         // Reset barcode character scanned
-                        barcode_char = ERROR_CHAR;
+                        // barcode_char = ERROR_CHAR;
                         // Reset number of characters scanned
                         count_scanned_char = 0;
                         // TODO: Backup car..
@@ -258,7 +258,7 @@ void read_barcode()
                         // Reset scan direction
                         reverse_scan = false;
                         // Reset barcode character scanned
-                        barcode_char = ERROR_CHAR;
+                        // barcode_char = ERROR_CHAR;
                         // Reset number of characters scanned
                         count_scanned_char = 0;
                         // TODO: Backup car..
@@ -291,7 +291,7 @@ void read_barcode()
                 // Reset scan direction
                 reverse_scan = false;
                 // Reset barcode character scanned
-                barcode_char = ERROR_CHAR;
+                // barcode_char = ERROR_CHAR;
                 // Reset number of characters scanned
                 count_scanned_char = 0;
                 // TODO: Backup car..

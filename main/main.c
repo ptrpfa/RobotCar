@@ -253,15 +253,15 @@ void mapMaze(int current_x, int current_y)
     mazeGrid[current_x][current_y].visited = 1;
 
     // Check if cell behind car is valid
-    if (isValid(current_x - getDeltaX(), current_y - getDeltaX()))
-    {
-        // If cell behind is barcode cell, this is barcode cell
-        // as barcode spans between 2 cells
-        if (mazeGrid[current_x - getDeltaX()][current_y - getDeltaY()].visited == 3)
-        {
-            mazeGrid[current_x][current_y].visited = 3;
-        }
-    }
+    // if (isValid(current_x - getDeltaX(), current_y - getDeltaX()))
+    // {
+    //     // If cell behind is barcode cell, this is barcode cell
+    //     // as barcode spans between 2 cells
+    //     if (mazeGrid[current_x - getDeltaX()][current_y - getDeltaY()].visited == 3)
+    //     {
+    //         mazeGrid[current_x][current_y].visited = 3;
+    //     }
+    // }
 
     // Don't allow barcode scanning if cell already marked as barcode cell
     scanning_allowed = !(mazeGrid[current_x][current_y].visited == 3);
@@ -284,7 +284,7 @@ void mapMaze(int current_x, int current_y)
      * move one more grid to finish scanning,
      * mark as barcode cell and reverse one grid to return to current cell
      */
-    if (start_scan)
+    if (start_scan && barcode_char == '#')
     {
         printf("Barcode scanning\n");
 
@@ -294,7 +294,7 @@ void mapMaze(int current_x, int current_y)
         reverseGrids(1);
         sleep_ms(1500);
     }
-
+    
     /***** Start the recursive journey *****/
     // Check front wall first
     if (isWallDetected())
@@ -553,7 +553,7 @@ int main()
     initInterrupts();
 
     // Init PID
-    add_repeating_timer_ms(75, pid_update_callback, NULL, &pid_timer);
+    add_repeating_timer_ms(50, pid_update_callback, NULL, &pid_timer);
 
     double cm;
 
@@ -578,13 +578,14 @@ int main()
     }
     isMazeMapped = true;
     printf("TIME TO NAVIGATE\n");
+    sleep_ms(5000);
 
     //  For reference
-    // // Solve maze
-    // solveMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);
-    // // cancel_repeating_timer(&pid_timer);
-    // // sleep_ms(10000);
-    // startCar = 0;
+    // Solve maze
+    solveMaze(STARTING_X, STARTING_Y, ENDING_X, ENDING_Y);
+    // cancel_repeating_timer(&pid_timer);
+    // sleep_ms(10000);
+    startCar = 0;
 
     return 0;
 }

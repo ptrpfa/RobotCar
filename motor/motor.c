@@ -162,7 +162,7 @@ void turnMotor(int direction)
 
     oscillation = 0;
 
-    int targetNotchCount = 235 * ENCODER_NOTCH / 360;
+    int targetNotchCount = 190 * ENCODER_NOTCH / 360;
     moveMotor(3125, 3125);
 
     // Motor to turn left
