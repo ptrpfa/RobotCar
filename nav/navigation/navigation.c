@@ -8,7 +8,7 @@
 #define STARTING_X 1
 #define STARTING_Y 0
 
-// End: (1, 0)
+// End: (2, 5)
 #define ENDING_X 2
 #define ENDING_Y 5
 

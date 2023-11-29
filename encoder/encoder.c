@@ -89,7 +89,7 @@ bool encoderCallback()
 
     if (targetGridNumber > 0)
     {
-        uint32_t grids_moved = movedDistance / 15.5;
+        uint32_t grids_moved = movedDistance / 10.5;
         if (grids_moved >= targetGridNumber)
         {
             targetGridNumber = 0;    // Reset target number of grids
