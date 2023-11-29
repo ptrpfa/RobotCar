@@ -36,7 +36,7 @@ extern bool isMazeMapped;
 
 // Functions for motors
 void navigateMaze(int x, int y, int end_x, int end_y, struct Coordinates path[], int pathLength, int *shortest_path_length, struct Coordinates *shortest_path);
-bool pid_update_callback(struct repeating_timer *t);
+bool pidUpdateCallback(struct repeating_timer *t);
 void solveMaze();
 
 #endif
