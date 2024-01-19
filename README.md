@@ -1,4 +1,4 @@
-## INF2004 Embedded Systems Team 18: Robot Car
+## Embedded Systems Team 18: Robot Car
 
 ### Members and Task Allocations
 **Team Members** <br>
