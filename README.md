@@ -2,38 +2,38 @@
 
 ### Members and Task Allocations
 **Team Members** <br>
-2200959 Peter Febrianto Afandy <br>
-2201014 Tng Jian Rong <br>
-2201132 Lionel Sim Wei Xian <br>
-2200920 Colin Ng Kar Jun <br>
-2200936 Muhammad Nur Dinie Bin Aziz <br>
+Peter Febrianto Afandy <br>
+Tng Jian Rong <br>
+Lionel Sim Wei Xian <br>
+Colin Ng Kar Jun <br>
+Muhammad Nur Dinie Bin Aziz <br>
 
 **Task Allocations** <br>
-*2200959 Peter Febrianto Afandy*
+*Peter Febrianto Afandy*
 - IR Sensor
 - Barcode Scanning and Recognition (all 3 sizes), and integration with car
 - Side wall detection
 - Optimisations
 - Navigation
 
-*2201014 Tng Jian Rong*
+*Tng Jian Rong*
 - User Interface (controls, display of sensor data, map, coordinates)
 - PID Controller
 - Wifi Communications between web interface and car
 
-*2201132 Lionel Sim Wei Xian*
+*Lionel Sim Wei Xian*
 - Ultrasonic Sensor
 - Obstacle detection with integrated Kalman Filter, and integration with car
 - Navigation
 - Mapping of maze (obstacle, barcode, walls)
 
-*2200920 Colin Ng Kar Jun*
+*Colin Ng Kar Jun*
 - User Interface (controls, display of sensor data, map, coordinates)
 - Magnetometer
 - Sensor Fusion
 - Integration of car movement from one grid to another (orientation of car, movement of car)
 
-*2200936 Muhammad Nur Dinie Bin Aziz*
+*Muhammad Nur Dinie Bin Aziz*
 - Wheel Encoder, Motor, Motor Controller
 - Integration of car movement
 - Assembly of car and integration of different components together
